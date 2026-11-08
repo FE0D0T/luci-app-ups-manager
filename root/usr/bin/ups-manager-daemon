@@ -144,7 +144,7 @@ while true; do
 			log_event WARN "Lost communication with UPS ($TARGET)."
 			[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "comm" "warn" "⚠️ Тревога: связь с ИБП потеряна, устройство офлайн!" "Связь с ИБП не восстановилась за период опроса. Возможно, отключён USB-порт платы или драйвер NUT."
 			if [ -x "$NOTIFY_SCRIPT" ]; then
-				"$NOTIFY_SCRIPT" "comm_lost" "UPS 通信中断: 无法连接 $TARGET" &
+				"$NOTIFY_SCRIPT" "comm_lost" "Связь с ИБП потеряна: не удаётся подключиться к $TARGET" &
 			fi
 			PREV_ONLINE=0
 		fi
@@ -159,7 +159,7 @@ EOF
 		log_event INFO "Restored communication with UPS ($TARGET)."
 		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "comm" "success" "⚡ Связь с ИБП восстановлена" "Связь с ИБП ($TARGET) восстановлена, устройство снова онлайн."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
-			"$NOTIFY_SCRIPT" "comm_restored" "UPS 通信恢复正常: $TARGET" &
+			"$NOTIFY_SCRIPT" "comm_restored" "Связь с ИБП восстановлена: $TARGET" &
 		fi
 		PREV_ONLINE=1
 	fi
@@ -286,7 +286,7 @@ EOF
 		log_event WARN "Power outage detected! Switched to battery power (Charge: ${CHARGE}%, Runtime: ${RUNTIME}s)."
 		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ Тревога: сеть отключена, переход на питание от батареи!" "Обнаружено отключение сети переменного тока (входное напряжение ${INPUT_V:-0.0} В). ИБП перешёл на питание от батареи (выход ${OUTPUT_V:-220.0} В, нагрузка ${LOAD_PCT:-0}%, заряд батареи ${CHARGE:-100}%)."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
-			"$NOTIFY_SCRIPT" "on_battery" "市电供电中断！UPS 已切换至电池供电 (电量: ${CHARGE}%, 预计续航: ${RUNTIME}秒)" &
+			"$NOTIFY_SCRIPT" "on_battery" "Питание от сети пропало! ИБП перешёл на батарею (заряд: ${CHARGE}%, оценка работы: ${RUNTIME} с)" &
 		fi
 		PREV_ON_BATTERY=1
 	elif [ $IS_OB -eq 0 ] && [ $PREV_ON_BATTERY -eq 1 ]; then
@@ -295,7 +295,7 @@ EOF
 		log_event INFO "Mains power restored after ${outage_sec}s. Running on line power."
 		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "success" "⚡ Сеть восстановлена" "Входное напряжение сети в норме (${INPUT_V:-220.0} В / ${INPUT_FREQ:-50.0} Гц), отключение длилось ${outage_sec} с, выход питается от сети."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
-			"$NOTIFY_SCRIPT" "online" "市电已恢复供电！(断电持续: ${outage_sec}秒, 当前电量: ${CHARGE}%)" &
+			"$NOTIFY_SCRIPT" "online" "Питание от сети восстановлено! (без питания: ${outage_sec} с, заряд: ${CHARGE}%)" &
 		fi
 		PREV_ON_BATTERY=0
 	fi
@@ -305,7 +305,7 @@ EOF
 		log_event CRIT "UPS battery is critically low! (Charge: ${CHARGE}%, Runtime: ${RUNTIME}s)."
 		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ Критично: заряд батареи ИБП очень низкий!" "Осталось ${CHARGE:-0}% заряда (ожидаемое время работы: ${RUNTIME:-0} с), скоро будет достигнут порог защитного выключения."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
-			"$NOTIFY_SCRIPT" "low_battery" "UPS 电池严重偏低！即将达到保护关机阈值 (当前电量: ${CHARGE}%)" &
+			"$NOTIFY_SCRIPT" "low_battery" "Батарея ИБП критически низкая! Скоро порог защитного отключения (заряд: ${CHARGE}%)" &
 		fi
 		PREV_LOW_BATTERY=1
 	elif [ $IS_LB -eq 0 ]; then

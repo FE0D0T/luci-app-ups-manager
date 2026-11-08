@@ -32,7 +32,7 @@ case "$ACTION" in
 		log_msg "Initiating coordinated shutdown sequence! Reason: $REASON"
 
 		# Notify users
-		/usr/bin/ups-manager-notify "shutdown" "紧急停机保护触发: $REASON" >/dev/null 2>&1 &
+		/usr/bin/ups-manager-notify "shutdown" "Сработала аварийная защита отключения: $REASON" >/dev/null 2>&1 &
 
 		# Phase 1: Notify remote slaves (via NUT upssched/upsmon or SSH)
 		log_msg "Phase 1: Sending shutdown signals to network client nodes..."

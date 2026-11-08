@@ -31,7 +31,7 @@
 
 **macOS / Linux:** в Terminal:
 ```sh
-cd "путь/к/translate/installers"
+cd "путь/к/luci-app-ups-manager-main/tools/installers"
 bash install-mac.sh
 ```
 
