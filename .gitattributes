@@ -5,4 +5,3 @@
 Makefile text eol=lf
 istore_ups text eol=lf
 *.png binary
-*.bat text eol=crlf

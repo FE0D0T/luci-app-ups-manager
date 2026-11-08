@@ -30,20 +30,19 @@ jobs:
 
           echo "=== 2. Validating JSON configurations ==="
           sudo apt-get update && sudo apt-get install -y jq
-          for j in root/usr/share/rpcd/acl.d/*.json root/usr/share/luci/menu.d/*.json app.json; do
+          for j in root/usr/share/rpcd/acl.d/*.json root/usr/share/luci/menu.d/*.json; do
             echo "Checking $j..."
             jq . "$j" > /dev/null
           done
 
           echo "=== 3. Validating Shell scripts syntax ==="
-          chmod +x root/etc/init.d/ups-manager root/usr/bin/ups-manager-* root/usr/libexec/rpcd/luci.ups-manager install.sh
+          chmod +x root/etc/init.d/ups-manager root/usr/bin/ups-manager-* root/usr/libexec/rpcd/luci.ups-manager
           bash -n root/etc/init.d/ups-manager
           bash -n root/usr/bin/ups-manager-daemon
           bash -n root/usr/bin/ups-manager-notify
           bash -n root/usr/bin/ups-manager-shutdown
           bash -n root/usr/bin/ups-manager-log-event
           bash -n root/usr/libexec/rpcd/luci.ups-manager
-          bash -n install.sh
 
       - name: Run Package Verification Suite
         run: |
@@ -53,7 +52,7 @@ jobs:
       - name: Build Standard OpenWrt / iStoreOS IPK Package
         run: |
           PKG_NAME="luci-app-ups-manager"
-          PKG_VERSION="1.0.0"
+          PKG_VERSION="1.0.1"
           PKG_RELEASE="1"
           PKG_ARCH="all"
           BUILD_DIR="/tmp/ipk-build"
@@ -87,7 +86,7 @@ Architecture: $PKG_ARCH
 Maintainer: Gilbert Liu & Contributors
 Title: LuCI support for UPS Manager
 Description: Enterprise UPS Power Management System for iStoreOS / OpenWrt with auto-discovery, telemetry, outage alerts and shutdown protection.
-Source: https://github.com/liuyuhao1023/luci-app-ups-manager
+Source: https://github.com/FE0D0T/luci-app-ups-manager
 License: GPL-2.0-or-later
 EOF
 

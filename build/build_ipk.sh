@@ -40,7 +40,7 @@ Architecture: $PKG_ARCH
 Maintainer: Gilbert Liu & Contributors
 Title: LuCI support for UPS Manager
 Description: Enterprise UPS Power Management System for OpenWrt / iStoreOS with auto-discovery, telemetry, outage alerts and shutdown protection.
-Source: https://github.com/liuyuhao1023/luci-app-ups-manager
+Source: https://github.com/FE0D0T/luci-app-ups-manager
 License: GPL-2.0-or-later
 EOF
 

@@ -48,19 +48,9 @@ else
 	log_fail "缺少 LuCI menu 文件"
 fi
 
-echo "=== 4. 检验 iStoreOS 官方 App-Meta 元数据包规范 ==="
-META_DIR="applications/app-meta-ups-manager"
-if [ -d "$META_DIR" ]; then
-	[ -f "$META_DIR/Makefile" ] && log_pass "app-meta Makefile 就绪" || log_fail "缺少 app-meta Makefile"
-	[ -f "$META_DIR/config.sh" ] && log_pass "iStore 自动配置脚本 config.sh 就绪" || log_fail "缺少 config.sh"
-	if [ -f "$META_DIR/logo.png" ]; then
-		log_pass "软件中心图标 logo.png 存在"
-	else
-		log_fail "缺少软件中心图标 logo.png"
-	fi
-else
-	log_fail "未找到 $META_DIR 目录"
-fi
+echo "=== 4. 检验 Makefile 与 LuCI 元数据 ==="
+grep -q 'PKG_NAME:=luci-app-ups-manager' Makefile && log_pass "Makefile 包名正确" || log_fail "Makefile 包名不正确"
+grep -q 'LUCI_TITLE' Makefile && log_pass "LUCI_TITLE задан" || log_fail "LUCI_TITLE не задан"
 
 echo "=== 5. 检验系统脚本与执行权限 ==="
 for script in root/etc/init.d/ups-manager root/usr/bin/ups-manager-* root/usr/libexec/rpcd/luci.ups-manager; do
@@ -72,7 +62,7 @@ done
 echo ""
 if [ $ERRORS -eq 0 ]; then
 	echo "============================================================"
-	echo "  🎉 恭喜！所有 iStoreOS 软件中心上架合规性校验项均已全部通过！"
+	echo "  🎉 Все проверки пакета пройдены!"
 	echo "============================================================"
 	exit 0
 else
