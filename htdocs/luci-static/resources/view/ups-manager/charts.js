@@ -7,6 +7,7 @@
 var callGetHistory = rpc.declare({
 	object: 'luci.ups-manager',
 	method: 'get_history',
+	params: ['range'],
 	expect: { '': {} }
 });
 
@@ -31,7 +32,7 @@ return view.extend({
 
 	load: function() {
 		return Promise.all([
-			callGetHistory(),
+			callGetHistory(this.timeRangeHours > 6 ? 'minute' : 'raw'),
 			callGetStatus()
 		]);
 	},
@@ -43,60 +44,60 @@ return view.extend({
 		self.historyData = (histRes && histRes.points) ? histRes.points : [];
 
 		var container = E('div', { 'class': 'cbi-map', 'style': 'max-width:1200px;margin:0 auto;' }, [
-			E('h2', { 'class': 'cbi-map-title', 'style': 'font-size:1.25rem;font-weight:700;' }, _('电源历史监控曲线')),
-			E('div', { 'class': 'cbi-map-descr', 'style': 'color:#64748b;margin-bottom:1.25rem;' }, _('实时记录电网输入电压、输出逆变电压、电池电量与负载率。数据点保存在内存环形缓冲区中，零闪存磨损。'))
+			E('h2', { 'class': 'cbi-map-title', 'style': 'font-size:1.25rem;font-weight:700;' }, _('График истории питания')),
+			E('div', { 'class': 'cbi-map-descr', 'style': 'color:var(--text-color-medium, #64748b);margin-bottom:1.25rem;' }, _('Запись входного напряжения сети, выходного напряжения инвертора, заряда батареи и загрузки в реальном времени. Точки хранятся в кольцевом буфере в памяти, без износа флеш-памяти.'))
 		]);
 
 		// Toolbar
 		var toolbar = E('div', {
-			'style': 'background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;'
+			'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;'
 		}, [
 			E('div', { 'style': 'display:flex;gap:0.5rem;align-items:center;' }, [
-				E('span', { 'style': 'font-weight:600;font-size:0.85rem;color:#334155;' }, _('时间范围:')),
+				E('span', { 'style': 'font-weight:600;font-size:0.85rem;color:var(--text-color-high, #334155);' }, _('Диапазон времени:')),
 				E('button', {
 					'class': 'cbi-button ' + (self.timeRangeHours === 1 ? 'cbi-button-apply' : 'cbi-button-neutral'),
 					'click': function() { self.changeRange(1, this); }
-				}, _('1 小时')),
+				}, _('1 час')),
 				E('button', {
 					'class': 'cbi-button ' + (self.timeRangeHours === 6 ? 'cbi-button-apply' : 'cbi-button-neutral'),
 					'click': function() { self.changeRange(6, this); }
-				}, _('6 小时')),
+				}, _('6 часов')),
 				E('button', {
 					'class': 'cbi-button ' + (self.timeRangeHours === 24 ? 'cbi-button-apply' : 'cbi-button-neutral'),
 					'click': function() { self.changeRange(24, this); }
-				}, _('24 小时'))
+				}, _('24 часа'))
 			]),
 			E('div', { 'style': 'display:flex;gap:0.5rem;' }, [
 				E('button', {
 					'class': 'cbi-button cbi-button-neutral',
 					'click': function() { self.exportCSV(); }
-				}, _('导出 CSV')),
+				}, _('Экспорт CSV')),
 				E('button', {
 					'class': 'cbi-button cbi-button-action',
 					'click': function() { self.refreshData(); }
-				}, _('刷新曲线'))
+				}, _('Обновить график'))
 			])
 		]);
 
 		// Voltage Chart Card
-		var chartCard1 = E('div', { 'class': 'cbi-section', 'style': 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);' }, [
+		var chartCard1 = E('div', { 'class': 'cbi-section', 'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);' }, [
 			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;' }, [
-				E('span', { 'style': 'font-weight:700;font-size:0.95rem;color:#1e293b;' }, ['🔌 ', _('输入与输出电压曲线 (V)')]),
+				E('span', { 'style': 'font-weight:700;font-size:0.95rem;color:var(--text-color-high, #1e293b);' }, ['🔌 ', _('График входного и выходного напряжения (В)')]),
 				E('span', { 'style': 'font-size:0.8rem;' }, [
-					E('span', { 'style': 'color:#2563eb;font-weight:bold;' }, '— ' + _('市电输入') + '  '),
-					E('span', { 'style': 'color:#10b981;font-weight:bold;' }, '— ' + _('逆变输出'))
+					E('span', { 'style': 'color:#2563eb;font-weight:bold;' }, '— ' + _('Вход от сети') + '  '),
+					E('span', { 'style': 'color:#10b981;font-weight:bold;' }, '— ' + _('Выход инвертора'))
 				])
 			]),
 			E('div', { 'id': 'chart-voltage-container', 'style': 'width:100%;height:220px;' })
 		]);
 
 		// Load & Battery Chart Card
-		var chartCard2 = E('div', { 'class': 'cbi-section', 'style': 'background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);' }, [
+		var chartCard2 = E('div', { 'class': 'cbi-section', 'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);' }, [
 			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;' }, [
-				E('span', { 'style': 'font-weight:700;font-size:0.95rem;color:#1e293b;' }, ['🔋 ', _('电池电量与输出负载率曲线 (%)')]),
+				E('span', { 'style': 'font-weight:700;font-size:0.95rem;color:var(--text-color-high, #1e293b);' }, ['🔋 ', _('График заряда батареи и загрузки (%)')]),
 				E('span', { 'style': 'font-size:0.8rem;' }, [
-					E('span', { 'style': 'color:#10b981;font-weight:bold;' }, '— ' + _('电池电量(%)') + '  '),
-					E('span', { 'style': 'color:#f59e0b;font-weight:bold;' }, '— ' + _('负载率(%)'))
+					E('span', { 'style': 'color:#10b981;font-weight:bold;' }, '— ' + _('Заряд батареи (%)') + '  '),
+					E('span', { 'style': 'color:#f59e0b;font-weight:bold;' }, '— ' + _('Загрузка (%)'))
 				])
 			]),
 			E('div', { 'id': 'chart-load-container', 'style': 'width:100%;height:220px;' })
@@ -114,6 +115,11 @@ return view.extend({
 
 	changeRange: function(hours, btn) {
 		this.timeRangeHours = hours;
+		var self = this;
+		callGetHistory(hours > 6 ? 'minute' : 'raw').then(function(res) {
+			self.historyData = (res && res.points) ? res.points : [];
+			self.drawCharts();
+		});
 		var parent = btn.parentElement;
 		var btns = parent.querySelectorAll('button');
 		btns.forEach(function(b) { b.className = 'cbi-button cbi-button-neutral'; });
@@ -123,11 +129,11 @@ return view.extend({
 
 	refreshData: function() {
 		var self = this;
-		return Promise.all([callGetHistory(), callGetStatus()]).then(function(res) {
+		return Promise.all([callGetHistory(self.timeRangeHours > 6 ? 'minute' : 'raw'), callGetStatus()]).then(function(res) {
 			self.historyData = (res[0] && res[0].points) ? res[0].points : [];
 			self.currentStatus = res[1] || {};
 			self.drawCharts();
-			ui.addNotification(null, E('p', {}, _('历史曲线已更新')), 'info');
+			ui.addNotification(null, E('p', {}, _('График истории обновлён')), 'info');
 		});
 	},
 
@@ -140,7 +146,7 @@ return view.extend({
 			var st = this.currentStatus || {};
 			var curV = st.input_voltage || 220;
 			var curVo = st.output_voltage || 220;
-			var curC = st.battery_charge || 100;
+			var curC = (st.battery_charge_calc !== null && st.battery_charge_calc !== undefined) ? st.battery_charge_calc : (st.battery_charge || 100);
 			var curL = st.load_percent || 10;
 			var curP = st.power || 50;
 
@@ -155,6 +161,24 @@ return view.extend({
 		var filtered = pts.filter(function(p) { return p.t >= cutoff; });
 		if (filtered.length < 2) return pts.slice(-50);
 		return filtered;
+	},
+
+	renderMinLine: function(points, yMin, yMax) {
+		// Те же размеры и формулы, что в renderSvgLineChart (width 800, height 200)
+		var padding = { top: 15, right: 25, bottom: 25, left: 45 };
+		var chartW = 800 - padding.left - padding.right;
+		var chartH = 200 - padding.top - padding.bottom;
+		var pts = points.filter(function(p) { return p.vmin > 0; });
+		if (pts.length < 2) return '';
+		var tMin = points[0].t, tMax = points[points.length - 1].t;
+		if (tMax <= tMin) tMax = tMin + 10;
+		var d = pts.map(function(p, i) {
+			var clamped = Math.max(yMin, Math.min(yMax, p.vmin));
+			var x = padding.left + ((p.t - tMin) / (tMax - tMin)) * chartW;
+			var y = padding.top + chartH - ((clamped - yMin) / (yMax - yMin)) * chartH;
+			return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+		}).join(' ');
+		return '<path d="' + d + '" fill="none" stroke="#f97316" stroke-width="1.5" stroke-dasharray="4,3" />';
 	},
 
 	renderSvgLineChart: function(points, keys, colors, yMin, yMax) {
@@ -194,7 +218,7 @@ return view.extend({
 
 		// Outage markers
 		for (var i = 0; i < points.length; i++) {
-			if (points[i].ob === 1) {
+			if (points[i].obc > 0 || points[i].ob === 1) {
 				var x = getX(points[i].t);
 				svg.push('<line x1="' + x + '" y1="' + padding.top + '" x2="' + x + '" y2="' + (padding.top + chartH) + '" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2" />');
 			}
@@ -224,6 +248,10 @@ return view.extend({
 		var c1 = document.getElementById('chart-voltage-container');
 		if (c1) {
 			c1.innerHTML = this.renderSvgLineChart(points, ['v', 'vo'], ['#2563eb', '#10b981'], 180, 260);
+			// минимум входного напряжения за минуту (пунктир), только если он есть в данных
+			if (points.some(function(p) { return p.vmin > 0; })) {
+				c1.innerHTML = c1.innerHTML.replace('</svg>', this.renderMinLine(points, 180, 260) + '</svg>');
+			}
 		}
 
 		var c2 = document.getElementById('chart-load-container');

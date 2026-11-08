@@ -21,7 +21,7 @@
 
 ### 3.1 Перевод и верстка
 - 10 видов LuCI и вкладка «Звук» переведены на русский (словарь ~411 строк).
-- Русское меню (12 пунктов). Китайский оригинал меню — в `root/` проекта; русский вариант — в `translate/root/`.
+- Русское меню (12 пунктов). Меню переведено в `root/usr/share/luci/menu.d/` проекта; `.
 - Цвета и поля для тёмной темы Proton2025: используются CSS-переменные темы (`--text-color-high`, `--background-color-low`, `--text-color-highest`).
 - Верстка для телефона (узкий экран < 600 px): кнопки, строки таблиц, заголовки.
 - Полоска заряда: зелёная > 50 %, жёлтая 21–50 %, красная ≤ 20 %, толщина 12 px, обводка.
@@ -93,7 +93,7 @@
 
 Структура:
 ```
-translate/
+tools/
 ├── README.md          ← краткая инструкция
 ├── STEPS.md           ← пошагово, ручной вариант
 ├── AI_CONTEXT.md      ← этот файл
@@ -133,7 +133,7 @@ uci commit ups_manager
 ssh root@192.168.1.1 "mkdir -p /tmp/ups-restore"
 scp -O router/* root@192.168.1.1:/tmp/ups-restore/
 ```
-Или запустить `installers/install-mac.sh` / `installers/install-windows.bat`, которые делают то же самое.
+Или запустить `tools/installers/install-mac.sh` / `installers/install-windows.bat`, которые делают то же самое.
 
 ### Шаг C. Установка на роутере
 ```

@@ -11,7 +11,7 @@
 
 set -e
 
-ROUTER_DIR="$(cd "$(dirname "$0")/.." && pwd)/router"
+ROUTER_DIR="$(cd "$(dirname "$0")/../router" && pwd)"
 
 if [ ! -f "$ROUTER_DIR/restore-all.sh" ]; then
   echo "ОШИБКА: не найдена папка router с restore-all.sh рядом с installers." >&2
@@ -32,4 +32,4 @@ ssh "root@${ROUTER_IP}" "sh /tmp/ups-restore/restore-all.sh" || \
   echo "ВНИМАНИЕ: восстановление завершилось с ошибкой. Смотрите вывод выше."
 
 echo
-echo "Готово. Откройте LuCI в режиме инкогнито. Подробнее: ../RESTORE_ALL.md"
+echo "Готово. Откройте LuCI в режиме инкогнито. Подробнее: docs/restore/STEPS.md"

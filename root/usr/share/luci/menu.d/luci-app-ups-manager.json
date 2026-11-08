@@ -1,6 +1,6 @@
 {
   "admin/services/ups_manager": {
-    "title": "UPS 管理",
+    "title": "Управление ИБП",
     "order": 60,
     "action": {
       "type": "alias",
@@ -13,7 +13,7 @@
     }
   },
   "admin/services/ups_manager/overview": {
-    "title": "监控总览",
+    "title": "Обзор",
     "order": 1,
     "action": {
       "type": "view",
@@ -21,7 +21,7 @@
     }
   },
   "admin/services/ups_manager/charts": {
-    "title": "历史曲线",
+    "title": "История",
     "order": 2,
     "action": {
       "type": "view",
@@ -29,7 +29,7 @@
     }
   },
   "admin/services/ups_manager/energy": {
-    "title": "用电报表",
+    "title": "Энергия",
     "order": 3,
     "action": {
       "type": "view",
@@ -37,7 +37,7 @@
     }
   },
   "admin/services/ups_manager/quality": {
-    "title": "电能质量",
+    "title": "Качество сети",
     "order": 4,
     "action": {
       "type": "view",
@@ -45,7 +45,7 @@
     }
   },
   "admin/services/ups_manager/capability": {
-    "title": "设备能力",
+    "title": "Возможности ИБП",
     "order": 5,
     "action": {
       "type": "view",
@@ -53,7 +53,7 @@
     }
   },
   "admin/services/ups_manager/settings": {
-    "title": "硬件配置",
+    "title": "Настройки ИБП",
     "order": 6,
     "action": {
       "type": "view",
@@ -61,7 +61,7 @@
     }
   },
   "admin/services/ups_manager/shutdown": {
-    "title": "断电保护",
+    "title": "Защита питания",
     "order": 7,
     "action": {
       "type": "view",
@@ -69,7 +69,7 @@
     }
   },
   "admin/services/ups_manager/notification": {
-    "title": "告警通知",
+    "title": "Уведомления",
     "order": 8,
     "action": {
       "type": "view",
@@ -77,7 +77,7 @@
     }
   },
   "admin/services/ups_manager/events": {
-    "title": "事件日志",
+    "title": "Журнал событий",
     "order": 9,
     "action": {
       "type": "view",
@@ -85,7 +85,7 @@
     }
   },
   "admin/services/ups_manager/diagnosis": {
-    "title": "维护诊断",
+    "title": "Диагностика",
     "order": 10,
     "action": {
       "type": "view",

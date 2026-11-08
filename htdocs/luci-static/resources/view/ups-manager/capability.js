@@ -12,40 +12,40 @@ var callGetRawData = rpc.declare({
 
 // NUT Field dictionary for human-friendly explanation and units
 var NUT_DICT = {
-	'battery.charge': { label: '电池剩余电量', unit: '%', type: 'measured', desc: '蓄电池组当前电量百分比' },
-	'battery.charge.low': { label: '低电量告警阈值', unit: '%', type: 'reported', desc: '触发 LB 状态的设备设定阈值' },
-	'battery.charge.warning': { label: '电量预警阈值', unit: '%', type: 'reported', desc: '触发预警通知的电量阈值' },
-	'battery.runtime': { label: '预计持续续航', unit: '秒', type: 'measured', desc: '当前负载下的预估可用放电时间' },
-	'battery.runtime.low': { label: '低续航告警阈值', unit: '秒', type: 'reported', desc: '触发低续航告警的时间阈值' },
-	'battery.voltage': { label: '电池端电压', unit: 'V', type: 'measured', desc: '蓄电池组总工作电压' },
-	'battery.voltage.nominal': { label: '电池标称电压', unit: 'V', type: 'reported', desc: '蓄电池组标准标称额定电压' },
-	'battery.type': { label: '电池技术类型', unit: '', type: 'reported', desc: '电池材料化学类型 (如 PbAc, Li-ion)' },
-	'device.mfr': { label: '设备厂商', unit: '', type: 'reported', desc: 'UPS 硬件生产制造商' },
-	'device.model': { label: '设备型号', unit: '', type: 'reported', desc: 'UPS 硬件型号' },
-	'device.serial': { label: '设备序列号', unit: '', type: 'reported', desc: '设备出厂唯一硬件编号' },
-	'device.type': { label: '设备类别', unit: '', type: 'reported', desc: '硬件大类 (ups)' },
-	'driver.name': { label: 'NUT 驱动程序', unit: '', type: 'system', desc: '用于和该硬件通信的 NUT 驱动' },
-	'driver.version': { label: 'NUT 驱动版本', unit: '', type: 'system', desc: 'NUT 驱动内部版本号' },
-	'driver.version.internal': { label: '驱动内部构建', unit: '', type: 'system', desc: '驱动编译版次' },
-	'input.voltage': { label: '市电输入电压', unit: 'V', type: 'measured', desc: '电网交流输入实际电压' },
-	'input.voltage.nominal': { label: '市电标称电压', unit: 'V', type: 'reported', desc: '电网标准设定电压 (如 220V)' },
-	'input.frequency': { label: '市电输入频率', unit: 'Hz', type: 'measured', desc: '电网交流输入实时工频' },
-	'input.frequency.nominal': { label: '市电标称频率', unit: 'Hz', type: 'reported', desc: '电网标准工频 (50Hz / 60Hz)' },
-	'output.voltage': { label: '逆变输出电压', unit: 'V', type: 'measured', desc: '输出给后端设备的交流电压' },
-	'output.voltage.nominal': { label: '输出标称电压', unit: 'V', type: 'reported', desc: '标准逆变输出目标电压' },
-	'output.frequency': { label: '逆变输出频率', unit: 'Hz', type: 'measured', desc: '输出端交流电工频' },
-	'output.current': { label: '输出实际电流', unit: 'A', type: 'measured', desc: '输出端实测负载电流' },
-	'ups.load': { label: '实时负载率', unit: '%', type: 'measured', desc: '相对于额定功率的负载比例' },
-	'ups.realpower': { label: '输出有功功率', unit: 'W', type: 'measured', desc: '设备实测有功功率' },
-	'ups.realpower.nominal': { label: '额定有功功率', unit: 'W', type: 'reported', desc: '硬件设计最大有功功率容量' },
-	'ups.power.nominal': { label: '额定视在功率', unit: 'VA', type: 'reported', desc: '硬件设计最大视在功率容量' },
-	'ups.status': { label: '运行状态代码', unit: '', type: 'measured', desc: 'OL (市电在线), OB (电池供电), LB (低电量) 等' },
-	'ups.temperature': { label: '设备内部温度', unit: '°C', type: 'measured', desc: '逆变器或机箱内部测温传感值' },
-	'ups.mfr': { label: 'UPS 厂商名称', unit: '', type: 'reported', desc: 'UPS 协议返回的制造商字符串' },
-	'ups.model': { label: 'UPS 型号名称', unit: '', type: 'reported', desc: 'UPS 协议返回的型号字符串' },
-	'ups.serial': { label: 'UPS 硬件序号', unit: '', type: 'reported', desc: 'UPS 固件返回的序列号' },
-	'ups.beeper.status': { label: '蜂鸣器状态', unit: '', type: 'reported', desc: 'enabled (启用) / disabled (静音)' },
-	'ups.test.result': { label: '最近自检结果', unit: '', type: 'reported', desc: '自检执行状态 (Done and passed, etc)' }
+	'battery.charge': { label: 'Остаток заряда батареи', unit: '%', type: 'measured', desc: 'Текущий заряд аккумуляторной батареи в процентах' },
+	'battery.charge.low': { label: 'Порог предупреждения о низком заряде', unit: '%', type: 'reported', desc: 'Заданный на устройстве порог, при котором включается статус LB' },
+	'battery.charge.warning': { label: 'Порог предупреждения по заряду', unit: '%', type: 'reported', desc: 'Порог заряда, при котором отправляется предупреждение' },
+	'battery.runtime': { label: 'Ожидаемое время работы от батареи', unit: 'сек', type: 'measured', desc: 'Расчётное время работы от батареи при текущей нагрузке' },
+	'battery.runtime.low': { label: 'Порог предупреждения о малом времени работы', unit: 'сек', type: 'reported', desc: 'Порог времени, при котором отправляется предупреждение о малом времени работы' },
+	'battery.voltage': { label: 'Напряжение батареи', unit: 'V', type: 'measured', desc: 'Общее рабочее напряжение аккумуляторной батареи' },
+	'battery.voltage.nominal': { label: 'Номинальное напряжение батареи', unit: 'V', type: 'reported', desc: 'Стандартное номинальное напряжение аккумуляторной батареи' },
+	'battery.type': { label: 'Тип батареи', unit: '', type: 'reported', desc: 'Химический тип батареи (например, PbAc, Li-ion)' },
+	'device.mfr': { label: 'Производитель устройства', unit: '', type: 'reported', desc: 'Производитель оборудования ИБП' },
+	'device.model': { label: 'Модель устройства', unit: '', type: 'reported', desc: 'Модель оборудования ИБП' },
+	'device.serial': { label: 'Серийный номер устройства', unit: '', type: 'reported', desc: 'Уникальный заводской номер устройства' },
+	'device.type': { label: 'Класс устройства', unit: '', type: 'reported', desc: 'Общий класс оборудования (ups)' },
+	'driver.name': { label: 'Драйвер NUT', unit: '', type: 'system', desc: 'Драйвер NUT для связи с этим оборудованием' },
+	'driver.version': { label: 'Версия драйвера NUT', unit: '', type: 'system', desc: 'Внутренний номер версии драйвера NUT' },
+	'driver.version.internal': { label: 'Внутренняя сборка драйвера', unit: '', type: 'system', desc: 'Номер сборки драйвера' },
+	'input.voltage': { label: 'Входное напряжение сети', unit: 'V', type: 'measured', desc: 'Фактическое входное напряжение сети переменного тока' },
+	'input.voltage.nominal': { label: 'Номинальное напряжение сети', unit: 'V', type: 'reported', desc: 'Стандартное напряжение сети (например, 220 В)' },
+	'input.frequency': { label: 'Частота входа сети', unit: 'Hz', type: 'measured', desc: 'Текущая промышленная частота сети переменного тока' },
+	'input.frequency.nominal': { label: 'Номинальная частота сети', unit: 'Hz', type: 'reported', desc: 'Стандартная промышленная частота сети (50 Гц / 60 Гц)' },
+	'output.voltage': { label: 'Выходное напряжение инвертора', unit: 'V', type: 'measured', desc: 'Переменное напряжение, подаваемое на подключённые устройства' },
+	'output.voltage.nominal': { label: 'Номинальное выходное напряжение', unit: 'V', type: 'reported', desc: 'Целевое стандартное выходное напряжение инвертора' },
+	'output.frequency': { label: 'Частота выхода инвертора', unit: 'Hz', type: 'measured', desc: 'Промышленная частота на выходе' },
+	'output.current': { label: 'Фактический выходной ток', unit: 'A', type: 'measured', desc: 'Измеренный ток нагрузки на выходе' },
+	'ups.load': { label: 'Текущая загрузка', unit: '%', type: 'measured', desc: 'Доля нагрузки относительно номинальной мощности' },
+	'ups.realpower': { label: 'Активная выходная мощность', unit: 'W', type: 'measured', desc: 'Измеренная активная мощность устройства' },
+	'ups.realpower.nominal': { label: 'Номинальная активная мощность', unit: 'W', type: 'reported', desc: 'Максимальная расчётная активная мощность оборудования' },
+	'ups.power.nominal': { label: 'Номинальная полная мощность', unit: 'VA', type: 'reported', desc: 'Максимальная расчётная полная мощность оборудования' },
+	'ups.status': { label: 'Код состояния работы', unit: '', type: 'measured', desc: 'OL (питание от сети), OB (питание от батареи), LB (низкий заряд) и др.' },
+	'ups.temperature': { label: 'Внутренняя температура устройства', unit: '°C', type: 'measured', desc: 'Показание датчика температуры инвертора или корпуса' },
+	'ups.mfr': { label: 'Название производителя ИБП', unit: '', type: 'reported', desc: 'Строка производителя, возвращаемая протоколом ИБП' },
+	'ups.model': { label: 'Название модели ИБП', unit: '', type: 'reported', desc: 'Строка модели, возвращаемая протоколом ИБП' },
+	'ups.serial': { label: 'Серийный номер ИБП', unit: '', type: 'reported', desc: 'Серийный номер, возвращаемый прошивкой ИБП' },
+	'ups.beeper.status': { label: 'Состояние зуммера', unit: '', type: 'reported', desc: 'enabled (включён) / disabled (выключен)' },
+	'ups.test.result': { label: 'Результат последней самодиагностики', unit: '', type: 'reported', desc: 'Статус самодиагностики (Done and passed и др.)' }
 };
 
 return view.extend({
@@ -59,34 +59,39 @@ return view.extend({
 		var self = this;
 		self.rawResult = res;
 
-		var container = E('div', { 'class': 'cbi-map' }, [
-			E('h2', { 'class': 'cbi-map-title' }, _('UPS 设备能力识别与原始映射')),
-			E('div', { 'class': 'cbi-map-descr' }, _('通过 NUT upsc 协议读取底层设备所有暴露字段，建立规范的能力映射字典。只读审计模式，绝不向 UPS 发送任何危险控制指令。'))
+		var mobileStyle = E('style', {}, [
+			'@media (max-width: 600px) { .cap-actions { justify-content: stretch !important; } .cap-actions .cbi-button { flex: 1 1 100%; text-align: center; } .cbi-map-title { font-size: 1.15rem !important; line-height: 1.3; } .cbi-map-descr { font-size: 0.88rem; } }'
 		]);
 
-		var actionBar = E('div', { 'style': 'margin-bottom:1rem;display:flex;gap:0.75rem;justify-content:flex-end;' }, [
+		var container = E('div', { 'class': 'cbi-map' }, [
+			mobileStyle,
+			E('h2', { 'class': 'cbi-map-title' }, _('Определение возможностей ИБП и сопоставление исходных данных')),
+			E('div', { 'class': 'cbi-map-descr' }, _('Чтение всех полей устройства по протоколу NUT upsc и построение словаря возможностей. Режим только для чтения: опасные команды управления ИБП не отправляются.'))
+		]);
+
+		var actionBar = E('div', { 'class': 'cap-actions', 'style': 'margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:flex-end;' }, [
 			E('button', {
 				'class': 'cbi-button cbi-button-action',
 				'click': function() {
 					self.exportJson();
 				}
-			}, _('导出能力报告 (JSON)')),
+			}, _('Экспорт отчёта о возможностях (JSON)')),
 			E('button', {
 				'class': 'cbi-button cbi-button-neutral',
 				'click': function() {
 					self.exportRawText();
 				}
-			}, _('导出 NUT 原始文本 (Raw)'))
+			}, _('Экспорт исходного текста NUT (Raw)'))
 		]);
 
 		var table = E('table', { 'class': 'table cbi-section-table', 'style': 'width:100%;' }, [
 			E('thead', {}, [
 				E('tr', { 'class': 'tr cbi-section-table-titles' }, [
-					E('th', { 'class': 'th', 'style': 'width:25%;' }, _('NUT 原始字段')),
-					E('th', { 'class': 'th', 'style': 'width:18%;' }, _('原始值')),
-					E('th', { 'class': 'th', 'style': 'width:20%;' }, _('中文释义与单位')),
-					E('th', { 'class': 'th', 'style': 'width:15%;' }, _('数据属性分类')),
-					E('th', { 'class': 'th', 'style': 'width:22%;' }, _('说明'))
+					E('th', { 'class': 'th', 'style': 'width:25%;' }, _('Исходное поле NUT')),
+					E('th', { 'class': 'th', 'style': 'width:18%;' }, _('Исходное значение')),
+					E('th', { 'class': 'th', 'style': 'width:20%;' }, _('Описание и единицы')),
+					E('th', { 'class': 'th', 'style': 'width:15%;' }, _('Категория данных')),
+					E('th', { 'class': 'th', 'style': 'width:22%;' }, _('Описание'))
 				])
 			]),
 			E('tbody', { 'id': 'capability-table-body' }, self.renderRows(res))
@@ -101,7 +106,7 @@ return view.extend({
 			return [
 				E('tr', {}, [
 					E('td', { 'colspan': '5', 'style': 'text-align:center;color:#ef4444;padding:2rem;' },
-						_('未能成功读取 UPS 原始字段，原因: ') + (res ? res.error : _('通信未就绪'))
+						_('Не удалось прочитать исходные поля ИБП, причина: ') + (res ? res.error : _('связь не готова'))
 					)
 				])
 			];
@@ -111,7 +116,7 @@ return view.extend({
 		if (keys.length === 0) {
 			return [
 				E('tr', {}, [
-					E('td', { 'colspan': '5', 'style': 'text-align:center;padding:2rem;' }, _('未检测到任何字段数据'))
+					E('td', { 'colspan': '5', 'style': 'text-align:center;padding:2rem;' }, _('Данные полей не обнаружены'))
 				])
 			];
 		}
@@ -120,16 +125,16 @@ return view.extend({
 		for (var i = 0; i < keys.length; i++) {
 			var k = keys[i];
 			var v = res.fields[k];
-			var meta = NUT_DICT[k] || { label: k, unit: '', type: 'custom', desc: _('扩展/未收录自定义字段') };
+			var meta = NUT_DICT[k] || { label: k, unit: '', type: 'custom', desc: _('Дополнительное или нестандартное поле') };
 
 			var tagClass = 'cbi-button-neutral';
-			var tagLabel = _('设备报告');
+			var tagLabel = _('Данные устройства');
 			if (meta.type === 'measured') {
 				tagClass = 'cbi-button-apply';
-				tagLabel = _('传感器实测');
+				tagLabel = _('Измерено датчиком');
 			} else if (meta.type === 'system') {
 				tagClass = 'cbi-button-action';
-				tagLabel = _('系统/驱动');
+				tagLabel = _('Система/драйвер');
 			}
 
 			rows.push(E('tr', { 'class': 'tr cbi-section-table-row' }, [
@@ -137,12 +142,12 @@ return view.extend({
 				E('td', { 'class': 'td', 'style': 'font-family:monospace;color:#2563eb;' }, v),
 				E('td', { 'class': 'td' }, [
 					meta.label,
-					meta.unit ? E('span', { 'style': 'color:#64748b;margin-left:4px;' }, '(' + meta.unit + ')') : ''
+					meta.unit ? E('span', { 'style': 'color:var(--text-color-medium, #64748b);margin-left:4px;' }, '(' + meta.unit + ')') : ''
 				]),
 				E('td', { 'class': 'td' }, [
 					E('span', { 'class': 'cbi-button ' + tagClass, 'style': 'padding:2px 8px;font-size:0.75rem;cursor:default;' }, tagLabel)
 				]),
-				E('td', { 'class': 'td', 'style': 'color:#64748b;font-size:0.85rem;' }, meta.desc)
+				E('td', { 'class': 'td', 'style': 'color:var(--text-color-medium, #64748b);font-size:0.85rem;' }, meta.desc)
 			]));
 		}
 

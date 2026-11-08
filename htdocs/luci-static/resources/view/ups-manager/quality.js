@@ -95,75 +95,74 @@ return view.extend({
 
 		var styleNode = E('style', {}, [
 			'.ups-quality-container { max-width: 1280px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Helvetica Neue", Arial, sans-serif; color: #1e293b; }',
-			'.dark-mode .ups-quality-container { color: #f8fafc; }',
-			'.pq-card { background: var(--cbi-section-background, #ffffff); border: 1px solid var(--cbi-section-border, #e2e8f0); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }',
-			'.dark-mode .pq-card { background: #1e293b; border-color: #334155; }',
+			'.dark-mode .ups-quality-container { color: var(--text-color-highest, #f8fafc); }',
+			'.pq-card { background: var(--background-color-low, #ffffff); border: 1px solid var(--cbi-section-border, #e2e8f0); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }',
+			'.dark-mode .pq-card { background: #1e293b; border-color: var(--text-color-high, #334155); }',
 			'.pq-header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }',
 			'.pq-subtag-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }',
 			'.pq-subtag-title { font-size: 0.75rem; font-weight: 700; color: #3b82f6; letter-spacing: 0.05em; text-transform: uppercase; }',
-			'.pq-main-title { font-size: 1.6rem; font-weight: 800; margin: 0; line-height: 1.2; color: #0f172a; }',
-			'.dark-mode .pq-main-title { color: #f8fafc; }',
-			'.pq-main-desc { font-size: 0.85rem; color: #64748b; margin: 0.45rem 0 0 0; }',
-			'.dark-mode .pq-main-desc { color: #94a3b8; }',
+			'.pq-main-title { font-size: 1.6rem; font-weight: 800; margin: 0; line-height: 1.2; color: var(--text-color-high, #0f172a); }',
+			'.dark-mode .pq-main-title { color: var(--text-color-highest, #f8fafc); }',
+			'.pq-main-desc { font-size: 0.85rem; color: var(--text-color-medium, #64748b); margin: 0.45rem 0 0 0; }',
+			'.dark-mode .pq-main-desc { color: var(--text-color-medium, #94a3b8); }',
 			'.pq-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.25rem; }',
 			'@media (max-width: 900px) { .pq-summary-grid { grid-template-columns: repeat(2, 1fr); } }',
 			'@media (max-width: 500px) { .pq-summary-grid { grid-template-columns: 1fr; } }',
-			'.pq-summary-tile { background: #f8fafc; border: 1px solid #edf2f7; border-radius: 10px; padding: 1rem 1.25rem; }',
-			'.dark-mode .pq-summary-tile { background: #0f172a; border-color: #334155; }',
-			'.pq-summary-k { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.4rem; }',
-			'.dark-mode .pq-summary-k { color: #94a3b8; }',
+			'.pq-summary-tile { background: var(--background-color-low, #f8fafc); border: 1px solid #edf2f7; border-radius: 10px; padding: 1rem 1.25rem; }',
+			'.dark-mode .pq-summary-tile { background: #0f172a; border-color: var(--text-color-high, #334155); }',
+'.pq-summary-k { font-size: 0.8rem; font-weight: 600; color: var(--text-color-medium, #64748b); margin-bottom: 0.4rem; }',
+			'.dark-mode .pq-summary-k { color: var(--text-color-medium, #94a3b8); }',
 			'.pq-summary-v { font-size: 1.55rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }',
 			'.pq-section-heading { font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 0.45rem; margin: 0; }',
-			'.pq-section-desc { font-size: 0.82rem; color: #64748b; margin: 0.35rem 0 1.1rem 0; }',
-			'.dark-mode .pq-section-desc { color: #94a3b8; }',
+			'.pq-section-desc { font-size: 0.82rem; color: var(--text-color-medium, #64748b); margin: 0.35rem 0 1.1rem 0; }',
+			'.dark-mode .pq-section-desc { color: var(--text-color-medium, #94a3b8); }',
 			'.pq-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }',
 			'@media (max-width: 900px) { .pq-metrics-grid { grid-template-columns: repeat(2, 1fr); } }',
 			'@media (max-width: 600px) { .pq-metrics-grid { grid-template-columns: 1fr; } }',
-			'.pq-metric-item { background: var(--cbi-section-background, #ffffff); border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; justify-content: space-between; min-height: 125px; }',
-			'.dark-mode .pq-metric-item { background: #1e293b; border-color: #334155; }',
+			'.pq-metric-item { background: var(--background-color-low, #ffffff); border: 1px solid var(--border-color-high, #e2e8f0); border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; justify-content: space-between; min-height: 125px; }',
+			'.dark-mode .pq-metric-item { background: #1e293b; border-color: var(--text-color-high, #334155); }',
 			'.pq-metric-header { display: flex; justify-content: space-between; align-items: center; }',
-			'.pq-metric-label { font-size: 0.92rem; font-weight: 700; color: #1e293b; }',
-			'.dark-mode .pq-metric-label { color: #f8fafc; }',
+			'.pq-metric-label { font-size: 0.92rem; font-weight: 700; color: var(--text-color-high, #1e293b); }',
+			'.dark-mode .pq-metric-label { color: var(--text-color-highest, #f8fafc); }',
 			'.pq-metric-val { font-size: 1.85rem; font-weight: 800; margin: 0.6rem 0; font-variant-numeric: tabular-nums; }',
-			'.pq-metric-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8; }',
-			'.pq-metric-mono { font-family: monospace; color: #94a3b8; font-size: 0.72rem; }',
+			'.pq-metric-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-color-medium, #94a3b8); }',
+			'.pq-metric-mono { font-family: monospace; color: var(--text-color-medium, #94a3b8); font-size: 0.72rem; }',
 			'.badge-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }',
-			'.badge-pill-green { background: #d1fae5; color: #059669; }',
-			'.badge-pill-red { background: #fee2e2; color: #dc2626; }',
-			'.badge-pill-gray { background: #f1f5f9; color: #64748b; }',
-			'.text-unsupported { font-size: 0.78rem; color: #94a3b8; font-weight: 500; }',
+			'.badge-pill-green { background: rgba(16,185,129,0.22); color: #059669; }',
+			'.badge-pill-red { background: rgba(239,68,68,0.22); color: #dc2626; }',
+			'.badge-pill-gray { background: var(--background-color-low, #f1f5f9); color: var(--text-color-medium, #64748b); }',
+			'.text-unsupported { font-size: 0.78rem; color: var(--text-color-medium, #94a3b8); font-weight: 500; }',
 			'.pq-rules-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }',
 			'@media (max-width: 1100px) { .pq-rules-grid { grid-template-columns: repeat(2, 1fr); } }',
 			'@media (max-width: 600px) { .pq-rules-grid { grid-template-columns: 1fr; } }',
-			'.pq-rule-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.15rem; display: flex; flex-direction: column; justify-content: space-between; }',
-			'.dark-mode .pq-rule-card { background: #1e293b; border-color: #334155; }',
+			'.pq-rule-card { background: var(--background-color-low, #ffffff); border: 1px solid var(--border-color-high, #e2e8f0); border-radius: 10px; padding: 1rem 1.15rem; display: flex; flex-direction: column; justify-content: space-between; }',
+			'.dark-mode .pq-rule-card { background: #1e293b; border-color: var(--text-color-high, #334155); }',
 			'.pq-rule-card.unsupported-hidden { display: none !important; }',
-			'.pq-rule-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }',
-			'.pq-rule-title { font-size: 0.92rem; font-weight: 700; color: #1e293b; }',
-			'.dark-mode .pq-rule-title { color: #f8fafc; }',
+			'.pq-rule-title { font-size: 0.92rem; font-weight: 700; color: var(--text-color-high, #1e293b); }',
+			'.dark-mode .pq-rule-title { color: var(--text-color-highest, #f8fafc); }',
 			'.pq-rule-fields { display: flex; flex-direction: column; gap: 0.6rem; }',
 			'.pq-rule-inputs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }',
-			'.pq-input-group label { display: block; font-size: 0.72rem; color: #64748b; margin-bottom: 0.25rem; }',
-			'.dark-mode .pq-input-group label { color: #94a3b8; }',
-			'.pq-input-group input, .pq-input-group select { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.35rem 0.5rem; font-size: 0.85rem; background: #ffffff; color: inherit; box-sizing: border-box; }',
-			'.dark-mode .pq-input-group input, .dark-mode .pq-input-group select { background: #0f172a; border-color: #475569; }',
-			'.pq-rule-unsupported-note { font-size: 0.72rem; color: #94a3b8; margin-top: 0.6rem; display: flex; align-items: center; gap: 0.35rem; }',
-			'.pq-event-item { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.9rem 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }',
-			'.dark-mode .pq-event-item { background: #1e293b; border-color: #334155; }',
+			'.pq-input-group label { display: block; font-size: 0.72rem; color: var(--text-color-medium, #64748b); margin-bottom: 0.25rem; }',
+			'.dark-mode .pq-input-group label { color: var(--text-color-medium, #94a3b8); }',
+			'.pq-input-group input, .pq-input-group select { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.35rem 0.5rem; font-size: 0.85rem; background: var(--background-color-high, #ffffff); color: var(--text-color-high, #0f172a); box-sizing: border-box; }',
+			'.dark-mode .pq-input-group input, .dark-mode .pq-input-group select { background: var(--background-color-high, #0f172a); color: var(--text-color-highest, #ffffff); border-color: var(--text-color-medium, #475569); }',
+			'.pq-rule-unsupported-note { font-size: 0.72rem; color: var(--text-color-medium, #94a3b8); margin-top: 0.6rem; display: flex; align-items: center; gap: 0.35rem; }',
+			'.pq-event-item { background: var(--background-color-low, #ffffff); border: 1px solid var(--border-color-high, #e2e8f0); border-radius: 10px; padding: 0.9rem 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }',
+			'.dark-mode .pq-event-item { background: #1e293b; border-color: var(--text-color-high, #334155); }',
 			'.pq-event-left { display: flex; align-items: center; gap: 1rem; }',
 			'.pq-circle-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }',
-			'.pq-circle-icon.recovered { background: #d1fae5; }',
+			'.pq-circle-icon.recovered { background: rgba(16,185,129,0.22); }',
 			'.pq-circle-icon.recovered .pq-dot { width: 14px; height: 14px; border-radius: 50%; background: #10b981; }',
-			'.pq-circle-icon.ongoing { background: #fee2e2; }',
+			'.pq-circle-icon.ongoing { background: rgba(239,68,68,0.22); }',
 			'.pq-circle-icon.ongoing .pq-dot { width: 14px; height: 14px; border-radius: 50%; background: #ef4444; }',
 			'.pq-event-main-line { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem; }',
-			'.pq-event-name { font-size: 0.95rem; font-weight: 700; color: #0f172a; }',
-			'.dark-mode .pq-event-name { color: #f8fafc; }',
-			'.pq-event-val { font-size: 0.92rem; font-weight: 700; font-family: monospace; color: #1e293b; }',
-			'.dark-mode .pq-event-val { color: #f8fafc; }',
-			'.pq-event-subline { font-size: 0.78rem; color: #94a3b8; }',
-			'.pq-tab-btn { border: none; background: transparent; padding: 5px 14px; font-size: 0.82rem; font-weight: 500; color: #64748b; border-radius: 6px; cursor: pointer; transition: all 0.2s; }',
-			'.pq-tab-btn.active { background: #ffffff; color: #0f172a; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }',
+			'.pq-event-name { font-size: 0.95rem; font-weight: 700; color: var(--text-color-high, #0f172a); }',
+			'.dark-mode .pq-event-name { color: var(--text-color-highest, #f8fafc); }',
+			'.pq-event-val { font-size: 0.92rem; font-weight: 700; font-family: monospace; color: var(--text-color-high, #1e293b); }',
+			'.dark-mode .pq-event-val { color: var(--text-color-highest, #f8fafc); }',
+			'.pq-event-subline { font-size: 0.78rem; color: var(--text-color-medium, #94a3b8); }',
+			'.pq-tab-btn { border: none; background: transparent; padding: 5px 14px; font-size: 0.82rem; font-weight: 500; color: var(--text-color-medium, #64748b); border-radius: 6px; cursor: pointer; transition: all 0.2s; }',
+			'.pq-tab-btn.active { background: var(--background-color-low, #ffffff); color: var(--text-color-high, #0f172a); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }',
 			'.dark-mode .pq-tab-btn.active { background: #334155; color: #ffffff; }'
 		]);
 
@@ -190,6 +189,15 @@ return view.extend({
 		var isConnected = status && status.connected;
 
 		// Calculate ongoing anomaly count
+		// Счётчики из журнала качества (quality_events.tsv): дата в формате ГГГГ/ММ/ДД ЧЧ:ММ:СС
+		var evs = this.eventsList || [];
+		var nowD = new Date();
+		var todayKey = nowD.getFullYear() + '/' + ('0' + (nowD.getMonth() + 1)).slice(-2) + '/' + ('0' + nowD.getDate()).slice(-2);
+		var todayCount = evs.filter(function(e) { return String(e.time || '').slice(0, 10) === todayKey; }).length;
+		var journalOngoing = evs.filter(function(e) { return e.status === 'ongoing'; }).length;
+		var lastEvent = evs.length ? evs[0] : null;
+		var lastTitle = lastEvent ? (lastEvent.title || '') : _('Нет событий');
+
 		var ongoingCount = 0;
 		if (!isConnected || !status.is_online) ongoingCount++;
 		if (status.load_percent && status.load_percent > 80) ongoingCount++;
@@ -197,8 +205,8 @@ return view.extend({
 
 		var isAllNormal = ongoingCount === 0;
 		var topBadge = isAllNormal ?
-			E('span', { 'class': 'badge-pill badge-pill-green' }, ['🟢 ', _('整体正常')]) :
-			E('span', { 'class': 'badge-pill badge-pill-red' }, ['🔴 ', _('存在异常')]);
+			E('span', { 'class': 'badge-pill badge-pill-green' }, ['🟢 ', _('Всё в норме')]) :
+			E('span', { 'class': 'badge-pill badge-pill-red' }, ['🔴 ', _('Есть отклонения')]);
 
 		var refreshBtn = E('button', {
 			'class': 'btn cbi-button cbi-button-action',
@@ -210,7 +218,7 @@ return view.extend({
 					btn.disabled = false;
 				});
 			}
-		}, ['🔄 ', _('刷新数据')]);
+		}, ['🔄 ', _('Обновить данные')]);
 
 		var card = E('div', { 'class': 'pq-card', 'id': 'pq-top-header-card' }, [
 			E('div', { 'class': 'pq-header-top' }, [
@@ -219,27 +227,27 @@ return view.extend({
 						E('span', { 'class': 'pq-subtag-title' }, 'POWER QUALITY MONITORING'),
 						topBadge
 					]),
-					E('h2', { 'class': 'pq-main-title' }, _('电能质量')),
-					E('p', { 'class': 'pq-main-desc' }, _('监控电压、频率、温度、负载与 UPS 告警状态。'))
+					E('h2', { 'class': 'pq-main-title' }, _('Качество электроэнергии')),
+					E('p', { 'class': 'pq-main-desc' }, _('Контроль напряжения, частоты, температуры, нагрузки и предупреждений ИБП.'))
 				]),
 				E('div', {}, [refreshBtn])
 			]),
 			E('div', { 'class': 'pq-summary-grid', 'id': 'pq-summary-grid' }, [
 				E('div', { 'class': 'pq-summary-tile' }, [
-					E('div', { 'class': 'pq-summary-k' }, _('整体状态')),
-					E('div', { 'class': 'pq-summary-v', 'style': 'color:' + (isAllNormal ? '#059669' : '#dc2626') }, isAllNormal ? _('整体正常') : _('存在异常'))
+					E('div', { 'class': 'pq-summary-k' }, _('Общее состояние')),
+					E('div', { 'class': 'pq-summary-v', 'style': 'color:' + (isAllNormal ? '#059669' : '#dc2626') }, isAllNormal ? _('Всё в норме') : _('Есть отклонения'))
 				]),
 				E('div', { 'class': 'pq-summary-tile' }, [
-					E('div', { 'class': 'pq-summary-k' }, _('进行中异常')),
-					E('div', { 'class': 'pq-summary-v', 'style': 'color:#dc2626;' }, String(ongoingCount))
+					E('div', { 'class': 'pq-summary-k' }, _('Активных отклонений')),
+					E('div', { 'class': 'pq-summary-v', 'style': 'color:#dc2626;' }, String(Math.max(ongoingCount, journalOngoing)))
 				]),
 				E('div', { 'class': 'pq-summary-tile' }, [
-					E('div', { 'class': 'pq-summary-k' }, _('今日异常')),
-					E('div', { 'class': 'pq-summary-v', 'style': 'color:#2563eb;' }, '0')
+					E('div', { 'class': 'pq-summary-k' }, _('Отклонений за сегодня')),
+					E('div', { 'class': 'pq-summary-v', 'style': 'color:#2563eb;' }, String(todayCount))
 				]),
 				E('div', { 'class': 'pq-summary-tile' }, [
-					E('div', { 'class': 'pq-summary-k' }, _('最近异常')),
-					E('div', { 'class': 'pq-summary-v', 'style': 'font-size:1.25rem;color:#1e293b;' }, _('输入频率波动'))
+					E('div', { 'class': 'pq-summary-k' }, _('Последнее отклонение')),
+					E('div', { 'class': 'pq-summary-v', 'style': 'font-size:1.25rem;color:var(--text-color-high, #1e293b);' }, lastTitle)
 				])
 			])
 		]);
@@ -254,48 +262,48 @@ return view.extend({
 		// 1. Input Voltage
 		var inV = (isConnected && status.input_voltage !== null && status.input_voltage !== undefined) ? Number(status.input_voltage).toFixed(1) : '0.0';
 		var inVAbnormal = !isConnected || inV < 190 || inV > 250;
-		var inVBadge = inVAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('异常')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('正常'));
+		var inVBadge = inVAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 2. Output Voltage
 		var outV = (isConnected && status.output_voltage !== null && status.output_voltage !== undefined) ? Number(status.output_voltage).toFixed(1) : '0.0';
 		var outVAbnormal = !isConnected || outV < 190 || outV > 250;
-		var outVBadge = outVAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('异常')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('正常'));
+		var outVBadge = outVAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 3. Input Frequency
 		var inF = (isConnected && status.input_freq !== null && status.input_freq !== undefined) ? Number(status.input_freq).toFixed(1) : '0.0';
 		var inFAbnormal = !isConnected || inF < 47 || inF > 53;
-		var inFBadge = inFAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('异常')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('正常'));
+		var inFBadge = inFAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 4. UPS Load
 		var load = (isConnected && status.load_percent !== null && status.load_percent !== undefined) ? Math.round(status.load_percent) : 0;
 		var loadAbnormal = load >= 80;
-		var loadBadge = loadAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('异常')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('正常'));
+		var loadBadge = loadAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 5. Temperature (Check if hardware supports it)
 		var hasTemp = isConnected && status.temperature !== null && status.temperature !== undefined && status.temperature !== '' && !isNaN(status.temperature);
-		var tempVal = hasTemp ? (Number(status.temperature).toFixed(1) + ' °C') : _('未知');
+		var tempVal = hasTemp ? (Number(status.temperature).toFixed(1) + ' °C') : _('неизвестно');
 		var tempBadge = hasTemp ?
-			(status.temperature > 50 ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('异常')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('正常'))) :
-			E('span', { 'class': 'text-unsupported' }, _('不支持'));
+			(status.temperature > 50 ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'))) :
+			E('span', { 'class': 'text-unsupported' }, _('Не поддерживается'));
 
 		// 6. UPS Status
 		var statusText = isConnected ? (status.status || 'OL') : 'OFFLINE';
 		var statusIsOnline = isConnected && status.is_online;
-		var statusBadge = statusIsOnline ? E('span', { 'class': 'badge-pill badge-pill-green' }, _('正常')) : E('span', { 'class': 'badge-pill badge-pill-red' }, _('异常'));
+		var statusBadge = statusIsOnline ? E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма')) : E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение'));
 
 		return E('div', { 'class': 'pq-card' }, [
-			E('h3', { 'class': 'pq-section-heading' }, ['📊 ', _('当前指标')]),
-			E('p', { 'class': 'pq-section-desc' }, _('来自 UPS 当前可读取的电能质量数据。')),
+			E('h3', { 'class': 'pq-section-heading' }, ['📊 ', _('Текущие показатели')]),
+			E('p', { 'class': 'pq-section-desc' }, _('Данные о качестве электроэнергии, доступные ИБП в настоящий момент.')),
 			E('div', { 'class': 'pq-metrics-grid', 'id': 'pq-metrics-grid' }, [
 				// Card 1
 				E('div', { 'class': 'pq-metric-item' }, [
 					E('div', { 'class': 'pq-metric-header' }, [
-						E('span', { 'class': 'pq-metric-label' }, _('输入电压')),
+						E('span', { 'class': 'pq-metric-label' }, _('Входное напряжение')),
 						inVBadge
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (inVAbnormal ? '#dc2626' : '#059669') }, inV + ' V'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('正常范围: 190 ~ 250 V')),
+						E('span', {}, _('Норма: 190 ~ 250 В')),
 						E('span', { 'class': 'pq-metric-mono' }, 'input.voltage')
 					])
 				]),
@@ -303,12 +311,12 @@ return view.extend({
 				// Card 2
 				E('div', { 'class': 'pq-metric-item' }, [
 					E('div', { 'class': 'pq-metric-header' }, [
-						E('span', { 'class': 'pq-metric-label' }, _('输出电压')),
+						E('span', { 'class': 'pq-metric-label' }, _('Выходное напряжение')),
 						outVBadge
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (outVAbnormal ? '#dc2626' : '#059669') }, outV + ' V'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('正常范围: 190 ~ 250 V')),
+						E('span', {}, _('Норма: 190 ~ 250 В')),
 						E('span', { 'class': 'pq-metric-mono' }, 'output.voltage')
 					])
 				]),
@@ -316,12 +324,12 @@ return view.extend({
 				// Card 3
 				E('div', { 'class': 'pq-metric-item' }, [
 					E('div', { 'class': 'pq-metric-header' }, [
-						E('span', { 'class': 'pq-metric-label' }, _('输入频率')),
+						E('span', { 'class': 'pq-metric-label' }, _('Входная частота')),
 						inFBadge
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (inFAbnormal ? '#dc2626' : '#059669') }, inF + ' Hz'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('正常范围: 47 ~ 53 Hz')),
+						E('span', {}, _('Норма: 47 ~ 53 Гц')),
 						E('span', { 'class': 'pq-metric-mono' }, 'input.frequency')
 					])
 				]),
@@ -329,12 +337,12 @@ return view.extend({
 				// Card 4
 				E('div', { 'class': 'pq-metric-item' }, [
 					E('div', { 'class': 'pq-metric-header' }, [
-						E('span', { 'class': 'pq-metric-label' }, _('UPS 负载率')),
+						E('span', { 'class': 'pq-metric-label' }, _('Загрузка ИБП')),
 						loadBadge
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:#2563eb;' }, load + ' %'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('正常范围: < 80 %')),
+						E('span', {}, _('Норма: < 80 %')),
 						E('span', { 'class': 'pq-metric-mono' }, 'ups.load')
 					])
 				]),
@@ -342,12 +350,12 @@ return view.extend({
 				// Card 5
 				E('div', { 'class': 'pq-metric-item' }, [
 					E('div', { 'class': 'pq-metric-header' }, [
-						E('span', { 'class': 'pq-metric-label' }, _('UPS 温度')),
+						E('span', { 'class': 'pq-metric-label' }, _('Температура ИБП')),
 						tempBadge
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (hasTemp ? '#1e293b' : '#64748b') }, tempVal),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('正常范围: < 50 °C')),
+						E('span', {}, _('Норма: < 50 °C')),
 						E('span', { 'class': 'pq-metric-mono' }, 'battery.temperature')
 					])
 				]),
@@ -355,12 +363,12 @@ return view.extend({
 				// Card 6
 				E('div', { 'class': 'pq-metric-item' }, [
 					E('div', { 'class': 'pq-metric-header' }, [
-						E('span', { 'class': 'pq-metric-label' }, _('UPS 告警状态')),
+						E('span', { 'class': 'pq-metric-label' }, _('Статус предупреждений ИБП')),
 						statusBadge
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (statusIsOnline ? '#059669' : '#2563eb') }, statusText),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('正常范围: OL (市电在线)')),
+						E('span', {}, _('Норма: OL (питание от сети)')),
 						E('span', { 'class': 'pq-metric-mono' }, 'ups.status')
 					])
 				])
@@ -396,7 +404,7 @@ return view.extend({
 			'class': 'btn cbi-button cbi-button-neutral',
 			'style': 'border-radius:6px;padding:0.35rem 0.75rem;font-size:0.82rem;',
 			'click': function() {
-				if (!confirm(_('确定恢复所有电能质量规则为出厂默认值吗？'))) return;
+				if (!confirm(_('Восстановить все правила качества электроэнергии к заводским значениям?'))) return;
 				for (var k in DEFAULT_RULES) {
 					var el = document.getElementById('rule-input-' + k);
 					if (el) el.value = DEFAULT_RULES[k];
@@ -405,9 +413,9 @@ return view.extend({
 				hideCheckbox.checked = false;
 				var items = document.querySelectorAll('.pq-rule-card.is-unsupported');
 				for (var i = 0; i < items.length; i++) items[i].classList.remove('unsupported-hidden');
-				ui.addNotification(null, E('p', {}, _('已恢复默认数值，请点击“保存规则”使其持久生效。')), 'info');
+				ui.addNotification(null, E('p', {}, _('Значения восстановлены. Нажмите «Сохранить правила», чтобы они действовали постоянно.')), 'info');
 			}
-		}, ['🔄 ', _('恢复默认')]);
+		}, ['🔄 ', _('Восстановить по умолчанию')]);
 
 		var saveBtn = E('button', {
 			'class': 'btn cbi-button cbi-button-action',
@@ -430,24 +438,24 @@ return view.extend({
 					return uci.apply();
 				}).then(function() {
 					btn.disabled = false;
-					ui.addNotification(null, E('p', {}, _('电能质量告警与防护规则已成功保存并生效。')), 'info');
+					ui.addNotification(null, E('p', {}, _('Правила предупреждений и защиты качества электроэнергии сохранены и применены.')), 'info');
 				}).catch(function(err) {
 					btn.disabled = false;
-					ui.addNotification(null, E('p', {}, _('保存失败: ') + (err.message || err)), 'error');
+					ui.addNotification(null, E('p', {}, _('Ошибка сохранения: ') + (err.message || err)), 'error');
 				});
 			}
-		}, ['💾 ', _('保存规则')]);
+		}, ['💾 ', _('Сохранить правила')]);
 
 		return E('div', { 'class': 'pq-card' }, [
 			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;' }, [
 				E('div', {}, [
-					E('h3', { 'class': 'pq-section-heading' }, ['🔔 ', _('告警规则')]),
-					E('p', { 'class': 'pq-section-desc', 'style': 'margin-bottom:0;' }, _('配置电能质量异常告警与通知策略'))
+					E('h3', { 'class': 'pq-section-heading' }, ['🔔 ', _('Правила предупреждений')]),
+					E('p', { 'class': 'pq-section-desc', 'style': 'margin-bottom:0;' }, _('Настройка предупреждений о нарушениях качества электроэнергии и политики уведомлений'))
 				]),
 				E('div', { 'style': 'display:flex;align-items:center;gap:0.75rem;' }, [
-					E('label', { 'style': 'display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:#64748b;cursor:pointer;' }, [
+					E('label', { 'style': 'display:flex;align-items:center;gap:0.35rem;font-size:0.82rem;color:var(--text-color-medium, #64748b);cursor:pointer;' }, [
 						hideCheckbox,
-						_('隐藏不支持项')
+						_('Скрыть неподдерживаемые пункты')
 					]),
 					restoreBtn,
 					saveBtn
@@ -455,39 +463,39 @@ return view.extend({
 			]),
 
 			// Subsection 1: Status Rules
-			E('div', { 'style': 'font-size:0.88rem;font-weight:700;color:#334155;margin:1.25rem 0 0.75rem 0;' }, _('状态类告警 (基于状态变化的告警规则)')),
+			E('div', { 'style': 'font-size:0.88rem;font-weight:700;color:var(--text-color-high, #334155);margin:1.25rem 0 0.75rem 0;' }, _('Предупреждения по состоянию (правила на основе изменения статуса)')),
 			E('div', { 'class': 'pq-rules-grid' }, [
 				// Rule 1: UPS 过载
-				this.renderStatusRuleCard('status_overload_sev', _('UPS 过载'), true, r.status_overload_sev),
+				this.renderStatusRuleCard('status_overload_sev', _('Перегрузка ИБП'), true, r.status_overload_sev),
 				// Rule 2: UPS 进入旁路模式
-				this.renderStatusRuleCard('status_bypass_sev', _('UPS 进入旁路模式'), true, r.status_bypass_sev),
+				this.renderStatusRuleCard('status_bypass_sev', _('ИБП перешёл в режим байпаса'), true, r.status_bypass_sev),
 				// Rule 3: 电池需要更换 (不支持)
-				this.renderStatusRuleCard('status_replace_batt_sev', _('电池需要更换'), false, r.status_replace_batt_sev),
+				this.renderStatusRuleCard('status_replace_batt_sev', _('Требуется замена батареи'), false, r.status_replace_batt_sev),
 				// Rule 4: UPS 自检失败 (不支持)
-				this.renderStatusRuleCard('status_selftest_fail_sev', _('UPS 自检失败'), false, r.status_selftest_fail_sev)
+				this.renderStatusRuleCard('status_selftest_fail_sev', _('Ошибка самодиагностики ИБП'), false, r.status_selftest_fail_sev)
 			]),
 
 			// Subsection 2: Numeric Rules
-			E('div', { 'style': 'font-size:0.88rem;font-weight:700;color:#334155;margin:1.5rem 0 0.75rem 0;' }, _('数值类告警 (基于数值阈值的告警规则)')),
+			E('div', { 'style': 'font-size:0.88rem;font-weight:700;color:var(--text-color-high, #334155);margin:1.5rem 0 0.75rem 0;' }, _('Предупреждения по значениям (правила на основе пороговых значений)')),
 			E('div', { 'class': 'pq-rules-grid' }, [
 				// 1. 输入电压过低
-				this.renderNumericRuleCard('in_volt_low', _('输入电压过低'), 'V', true, r.in_volt_low_trig, r.in_volt_low_rec, r.in_volt_low_sev),
+				this.renderNumericRuleCard('in_volt_low', _('Низкое входное напряжение'), 'V', true, r.in_volt_low_trig, r.in_volt_low_rec, r.in_volt_low_sev),
 				// 2. 输入电压过高
-				this.renderNumericRuleCard('in_volt_high', _('输入电压过高'), 'V', true, r.in_volt_high_trig, r.in_volt_high_rec, r.in_volt_high_sev),
+				this.renderNumericRuleCard('in_volt_high', _('Высокое входное напряжение'), 'V', true, r.in_volt_high_trig, r.in_volt_high_rec, r.in_volt_high_sev),
 				// 3. 输出电压过低
-				this.renderNumericRuleCard('out_volt_low', _('输出电压过低'), 'V', true, r.out_volt_low_trig, r.out_volt_low_rec, r.out_volt_low_sev),
+				this.renderNumericRuleCard('out_volt_low', _('Низкое выходное напряжение'), 'V', true, r.out_volt_low_trig, r.out_volt_low_rec, r.out_volt_low_sev),
 				// 4. 输出电压过高
-				this.renderNumericRuleCard('out_volt_high', _('输出电压过高'), 'V', true, r.out_volt_high_trig, r.out_volt_high_rec, r.out_volt_high_sev),
+				this.renderNumericRuleCard('out_volt_high', _('Высокое выходное напряжение'), 'V', true, r.out_volt_high_trig, r.out_volt_high_rec, r.out_volt_high_sev),
 				// 5. 输入频率过低
-				this.renderNumericRuleCard('in_freq_low', _('输入频率过低'), 'Hz', true, r.in_freq_low_trig, r.in_freq_low_rec, r.in_freq_low_sev),
+				this.renderNumericRuleCard('in_freq_low', _('Низкая входная частота'), 'Hz', true, r.in_freq_low_trig, r.in_freq_low_rec, r.in_freq_low_sev),
 				// 6. 输入频率过高
-				this.renderNumericRuleCard('in_freq_high', _('输入频率过高'), 'Hz', true, r.in_freq_high_trig, r.in_freq_high_rec, r.in_freq_high_sev),
+				this.renderNumericRuleCard('in_freq_high', _('Высокая входная частота'), 'Hz', true, r.in_freq_high_trig, r.in_freq_high_rec, r.in_freq_high_sev),
 				// 7. UPS 温度过高 (不支持)
-				this.renderNumericRuleCard('temp_high', _('UPS 温度过高'), '°C', false, r.temp_high_trig, r.temp_high_rec, r.temp_high_sev),
+				this.renderNumericRuleCard('temp_high', _('Высокая температура ИБП'), '°C', false, r.temp_high_trig, r.temp_high_rec, r.temp_high_sev),
 				// 8. UPS 负载较高
-				this.renderNumericRuleCard('load_high', _('UPS 负载较高'), '%', true, r.load_high_trig, r.load_high_rec, r.load_high_sev),
+				this.renderNumericRuleCard('load_high', _('Высокая загрузка ИБП'), '%', true, r.load_high_trig, r.load_high_rec, r.load_high_sev),
 				// 9. UPS 严重过载
-				this.renderNumericRuleCard('load_crit', _('UPS 严重过载'), '%', true, r.load_crit_trig, r.load_crit_rec, r.load_crit_sev)
+				this.renderNumericRuleCard('load_crit', _('Критическая перегрузка ИБП'), '%', true, r.load_crit_trig, r.load_crit_rec, r.load_crit_sev)
 			])
 		]);
 	},
@@ -497,21 +505,21 @@ return view.extend({
 		var cardClass = 'pq-rule-card' + (!supported ? ' is-unsupported' : '') + (isHidden ? ' unsupported-hidden' : '');
 
 		var badge = supported ?
-			E('span', { 'class': 'badge-pill badge-pill-green' }, _('支持')) :
-			E('span', { 'class': 'text-unsupported' }, _('不支持'));
+			E('span', { 'class': 'badge-pill badge-pill-green' }, _('Поддерживается')) :
+			E('span', { 'class': 'text-unsupported' }, _('Не поддерживается'));
 
 		var sevSelect = E('select', {
 			'id': 'rule-input-' + key,
 			'class': 'cbi-input-select'
 		}, [
-			E('option', { 'value': 'warning', 'selected': curSev === 'warning' }, _('警告')),
-			E('option', { 'value': 'critical', 'selected': curSev === 'critical' }, _('严重'))
+			E('option', { 'value': 'warning', 'selected': curSev === 'warning' }, _('Предупреждение')),
+			E('option', { 'value': 'critical', 'selected': curSev === 'critical' }, _('Критично'))
 		]);
 
 		var noteNode = !supported ?
 			E('div', { 'class': 'pq-rule-unsupported-note' }, [
 				E('span', { 'style': 'color:#3b82f6;font-size:0.85rem;' }, 'ℹ️'),
-				_('当前 UPS 未提供对应数据字段')
+				_('Текущий ИБП не предоставляет соответствующее поле данных')
 			]) : '';
 
 		return E('div', { 'class': cardClass }, [
@@ -521,7 +529,7 @@ return view.extend({
 			]),
 			E('div', { 'class': 'pq-rule-fields' }, [
 				E('div', { 'class': 'pq-input-group' }, [
-					E('label', {}, _('严重程度')),
+					E('label', {}, _('Степень серьёзности')),
 					sevSelect
 				])
 			]),
@@ -534,8 +542,8 @@ return view.extend({
 		var cardClass = 'pq-rule-card' + (!supported ? ' is-unsupported' : '') + (isHidden ? ' unsupported-hidden' : '');
 
 		var badge = supported ?
-			E('span', { 'class': 'badge-pill badge-pill-green' }, _('支持')) :
-			E('span', { 'class': 'text-unsupported' }, _('不支持'));
+			E('span', { 'class': 'badge-pill badge-pill-green' }, _('Поддерживается')) :
+			E('span', { 'class': 'text-unsupported' }, _('Не поддерживается'));
 
 		var trigInput = E('input', {
 			'type': 'number',
@@ -553,14 +561,14 @@ return view.extend({
 			'id': 'rule-input-' + prefix + '_sev',
 			'class': 'cbi-input-select'
 		}, [
-			E('option', { 'value': 'warning', 'selected': sevVal === 'warning' }, _('警告')),
-			E('option', { 'value': 'critical', 'selected': sevVal === 'critical' }, _('严重'))
+			E('option', { 'value': 'warning', 'selected': sevVal === 'warning' }, _('Предупреждение')),
+			E('option', { 'value': 'critical', 'selected': sevVal === 'critical' }, _('Критично'))
 		]);
 
 		var noteNode = !supported ?
 			E('div', { 'class': 'pq-rule-unsupported-note' }, [
 				E('span', { 'style': 'color:#3b82f6;font-size:0.85rem;' }, 'ℹ️'),
-				_('当前 UPS 未提供对应数据字段')
+				_('Текущий ИБП не предоставляет соответствующее поле данных')
 			]) : '';
 
 		return E('div', { 'class': cardClass }, [
@@ -571,16 +579,16 @@ return view.extend({
 			E('div', { 'class': 'pq-rule-fields' }, [
 				E('div', { 'class': 'pq-rule-inputs-row' }, [
 					E('div', { 'class': 'pq-input-group' }, [
-						E('label', {}, _('触发阈值 (') + unit + ')'),
+						E('label', {}, _('Порог срабатывания (') + unit + ')'),
 						trigInput
 					]),
 					E('div', { 'class': 'pq-input-group' }, [
-						E('label', {}, _('恢复阈值 (') + unit + ')'),
+						E('label', {}, _('Порог восстановления (') + unit + ')'),
 						recInput
 					])
 				]),
 				E('div', { 'class': 'pq-input-group' }, [
-					E('label', {}, _('严重程度')),
+					E('label', {}, _('Степень серьёзности')),
 					sevSelect
 				])
 			]),
@@ -594,45 +602,45 @@ return view.extend({
 		var tabAll = E('button', {
 			'class': 'pq-tab-btn' + (this.activeFilter === 'all' ? ' active' : ''),
 			'click': function() { self.switchTab('all'); }
-		}, _('全部'));
+		}, _('Все'));
 
 		var tabOngoing = E('button', {
 			'class': 'pq-tab-btn' + (this.activeFilter === 'ongoing' ? ' active' : ''),
 			'click': function() { self.switchTab('ongoing'); }
-		}, _('进行中'));
+		}, _('Активные'));
 
 		var tabRecovered = E('button', {
 			'class': 'pq-tab-btn' + (this.activeFilter === 'recovered' ? ' active' : ''),
 			'click': function() { self.switchTab('recovered'); }
-		}, _('已恢复'));
+		}, _('Восстановленные'));
 
 		var refreshEventsBtn = E('button', {
 			'class': 'btn cbi-button cbi-button-action',
 			'style': 'border-radius:6px;padding:0.35rem 0.75rem;font-size:0.82rem;',
 			'click': function() { self.refreshEvents(); }
-		}, ['🔄 ', _('刷新')]);
+		}, ['🔄 ', _('Обновить')]);
 
 		var clearBtn = E('button', {
 			'class': 'btn cbi-button cbi-button-neutral',
 			'style': 'border-radius:6px;padding:0.35rem 0.75rem;font-size:0.82rem;',
 			'click': function() {
-				if (!confirm(_('确定清理所有已恢复的历史事件吗？'))) return;
+				if (!confirm(_('Удалить все восстановленные события из истории?'))) return;
 				callClearQualityEvents().then(function() {
 					self.eventsList = [];
 					self.updateEventsList();
-					ui.addNotification(null, E('p', {}, _('已成功清理已恢复事件。')), 'info');
+					ui.addNotification(null, E('p', {}, _('Восстановленные события удалены.')), 'info');
 				});
 			}
-		}, ['🗑️ ', _('清理已恢复')]);
+		}, ['🗑️ ', _('Удалить восстановленные')]);
 
 		var card = E('div', { 'class': 'pq-card', 'id': 'pq-events-card' }, [
 			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;' }, [
 				E('div', {}, [
-					E('h3', { 'class': 'pq-section-heading' }, ['⚠️ ', _('异常事件')]),
-					E('p', { 'class': 'pq-section-desc', 'style': 'margin-bottom:0;' }, _('查看正在发生和已经恢复的电能质量异常。'))
+					E('h3', { 'class': 'pq-section-heading' }, ['⚠️ ', _('События отклонений')]),
+					E('p', { 'class': 'pq-section-desc', 'style': 'margin-bottom:0;' }, _('Просмотр текущих и уже восстановленных отклонений качества электроэнергии.'))
 				]),
 				E('div', { 'style': 'display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;' }, [
-					E('div', { 'style': 'display:flex;background:#f1f5f9;border-radius:8px;padding:3px;gap:2px;' }, [
+					E('div', { 'style': 'display:flex;background:var(--background-color-low, #f1f5f9);border-radius:8px;padding:3px;gap:2px;' }, [
 						tabAll, tabOngoing, tabRecovered
 					]),
 					refreshEventsBtn,
@@ -640,12 +648,12 @@ return view.extend({
 				])
 			]),
 			E('div', { 'id': 'pq-events-list-container' }, this.renderEventRows()),
-			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;color:#64748b;margin-top:1.25rem;border-top:1px solid #f1f5f9;padding-top:0.75rem;' }, [
-				E('span', { 'id': 'pq-events-count-label' }, _('共 ') + this.eventsList.length + _(' 条 · 第 1/1 页')),
+			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;color:var(--text-color-medium, #64748b);margin-top:1.25rem;border-top:1px solid #f1f5f9;padding-top:0.75rem;' }, [
+				E('span', { 'id': 'pq-events-count-label' }, _('Всего ') + this.eventsList.length + _(' записей · стр. 1/1')),
 				E('div', { 'style': 'display:flex;align-items:center;gap:0.5rem;' }, [
-					E('span', {}, _('每页 20 条')),
-					E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'disabled': true, 'style': 'padding:2px 8px;font-size:0.8rem;' }, _('上一页')),
-					E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'disabled': true, 'style': 'padding:2px 8px;font-size:0.8rem;' }, _('下一页'))
+					E('span', {}, _('20 записей на странице')),
+					E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'disabled': true, 'style': 'padding:2px 8px;font-size:0.8rem;' }, _('Назад')),
+					E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'disabled': true, 'style': 'padding:2px 8px;font-size:0.8rem;' }, _('Вперёд'))
 				])
 			])
 		]);
@@ -663,7 +671,7 @@ return view.extend({
 
 		if (filtered.length === 0) {
 			return [
-				E('div', { 'style': 'text-align:center;padding:2.5rem 0;color:#94a3b8;font-size:0.9rem;' }, _('暂无相关电能质量异常记录'))
+				E('div', { 'style': 'text-align:center;padding:2.5rem 0;color:var(--text-color-medium, #94a3b8);font-size:0.9rem;' }, _('Записей об отклонениях качества электроэнергии пока нет'))
 			];
 		}
 
@@ -675,25 +683,25 @@ return view.extend({
 			]);
 
 			var sevBadge = item.severity === 'critical' ?
-				E('span', { 'class': 'badge-pill badge-pill-red' }, _('严重')) :
-				E('span', { 'class': 'badge-pill badge-pill-gray' }, _('警告'));
+				E('span', { 'class': 'badge-pill badge-pill-red' }, _('Критично')) :
+				E('span', { 'class': 'badge-pill badge-pill-gray' }, _('Предупреждение'));
 
 			var statusPill = isRecovered ?
-				E('span', { 'class': 'badge-pill badge-pill-green' }, _('已恢复')) :
-				E('span', { 'class': 'badge-pill badge-pill-red' }, _('进行中'));
+				E('span', { 'class': 'badge-pill badge-pill-green' }, _('Восстановленные')) :
+				E('span', { 'class': 'badge-pill badge-pill-red' }, _('Активные'));
 
 			var detailBtn = E('button', {
 				'class': 'btn cbi-button cbi-button-neutral',
 				'style': 'padding:0.3rem 0.85rem;font-size:0.82rem;border-radius:6px;',
 				'click': function() { self.showEventModal(item); }
-			}, _('详情'));
+			}, _('Подробнее'));
 
 			var row = E('div', { 'class': 'pq-event-item' }, [
 				E('div', { 'class': 'pq-event-left' }, [
 					circleNode,
 					E('div', {}, [
 						E('div', { 'class': 'pq-event-main-line' }, [
-							E('span', { 'class': 'pq-event-name' }, item.title || _('电能指标波动')),
+							E('span', { 'class': 'pq-event-name' }, item.title || _('Колебания показателей электроэнергии')),
 							sevBadge,
 							E('span', { 'class': 'pq-event-val' }, item.value || '--'),
 							statusPill
@@ -730,47 +738,47 @@ return view.extend({
 		}
 		var countLabel = document.getElementById('pq-events-count-label');
 		if (countLabel) {
-			countLabel.innerText = _('共 ') + this.eventsList.length + _(' 条 · 第 1/1 页');
+			countLabel.innerText = _('Всего ') + this.eventsList.length + _(' записей · стр. 1/1');
 		}
 	},
 
 	showEventModal: function(item) {
-		ui.showModal(_('电能质量异常事件详情'), [
+		ui.showModal(_('Подробности события отклонения качества электроэнергии'), [
 			E('table', { 'class': 'table', 'style': 'margin-top:0.5rem;' }, [
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;width:35%;' }, _('事件名称 / ID')),
-					E('td', {}, (item.title || '') + ' (' + (item.id || '') + ')')
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;width:35%;'  }, _('Название события / ID')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, (item.title || '') + ' (' + (item.id || '') + ')')
 				]),
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;' }, _('告警等级')),
-					E('td', {}, item.severity === 'critical' ? _('严重告警') : _('预警提示'))
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Уровень предупреждения')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.severity === 'critical' ? _('Критическое предупреждение') : _('Информационное предупреждение'))
 				]),
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;' }, _('当前状态')),
-					E('td', {}, item.status === 'recovered' ? _('🟢 已恢复正常') : _('🔴 异常进行中'))
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Текущее состояние')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.status === 'recovered' ? _('🟢 Восстановлено') : _('🔴 Отклонение продолжается'))
 				]),
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;' }, _('触发时数值')),
-					E('td', { 'style': 'font-family:monospace;font-weight:bold;' }, item.value || '--')
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Значение при срабатывании')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-family:monospace;font-weight:bold;'  }, item.value || '--')
 				]),
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;' }, _('触发发生时刻')),
-					E('td', {}, item.time || '--')
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Время срабатывания')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.time || '--')
 				]),
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;' }, _('异常持续时长')),
-					E('td', {}, item.duration || _('瞬态已消除'))
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Длительность отклонения')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.duration || _('Кратковременное, устранено'))
 				]),
 				E('tr', {}, [
-					E('td', { 'style': 'font-weight:600;' }, _('详情判定说明')),
-					E('td', {}, item.detail || _('监测到电网供电指标偏离安全门限，已自动录入电能质量分析日志。'))
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Пояснение к определению')),
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.detail || _('Показатели сети вышли за безопасные пределы. Событие автоматически записано в журнал анализа качества электроэнергии.'))
 				])
 			]),
 			E('div', { 'class': 'right', 'style': 'margin-top:1.5rem;' }, [
 				E('button', {
 					'class': 'btn cbi-button cbi-button-action',
 					'click': ui.hideModal
-				}, _('关闭'))
+				}, _('Закрыть'))
 			])
 		]);
 	},
@@ -802,7 +810,7 @@ return view.extend({
 				grid.parentNode.replaceWith(newCard);
 			}
 			self.updateEventsList();
-			ui.addNotification(null, E('p', {}, _('电能质量数据已刷新')), 'info');
+			ui.addNotification(null, E('p', {}, _('Данные о качестве электроэнергии обновлены')), 'info');
 		});
 	}
 });

@@ -7,7 +7,7 @@ EVENT_TYPE="$1"
 EVENT_MSG="$2"
 
 [ -n "$EVENT_TYPE" ] || exit 0
-[ -n "$EVENT_MSG" ] || EVENT_MSG="UPS 状态事件变更"
+[ -n "$EVENT_MSG" ] || EVENT_MSG="Изменение состояния ИБП"
 
 ENABLED=$(uci -q get ${CONF}.notification.enabled || echo "0")
 [ "$ENABLED" = "1" ] || exit 0
@@ -59,8 +59,8 @@ fi
 echo "$NOW" > "$TMP_LOCK"
 
 HOSTNAME=$(cat /proc/sys/kernel/hostname 2>/dev/null || echo "OpenWrt")
-TITLE="[UPS告警] $HOSTNAME"
-CONTENT="【设备】$HOSTNAME\n【事件】$EVENT_MSG\n【时间】$(date '+%Y-%m-%d %H:%M:%S')"
+TITLE="[Оповещение ИБП] $HOSTNAME"
+CONTENT="Устройство: $HOSTNAME\nСобытие: $EVENT_MSG\nВремя: $(date '+%Y-%m-%d %H:%M:%S')"
 
 case "$CHANNEL" in
 	wechat)
