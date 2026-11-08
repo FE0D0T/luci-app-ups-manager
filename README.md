@@ -149,33 +149,19 @@ luci-app-ups-manager/
 
 ## 🛠️ Установка
 
-### Установка вручную (opkg / apk)
+Пошаговая инструкция с проверкой: **[INSTALL.md](INSTALL.md)**.
 
-#### 1. OpenWrt / iStoreOS с opkg (старые версии)
-```bash
-# Обновить список пакетов
-opkg update
+Кратко, для OpenWrt 25.x (apk):
 
-# Установить зависимости NUT
-opkg install nut nut-common nut-server nut-upsmon nut-upsc nut-driver-usbhid-ups curl
-
-# Установить пакет (файл .ipk, собранный через SDK, см. раздел «Сборка»)
-opkg install ./luci-app-ups-manager_1.0.1-1_all.ipk
-```
-
-#### 2. OpenWrt 25+ с apk
-```bash
-# Обновить список пакетов
+```sh
 apk update
-
-# Установить зависимости NUT
-apk add nut-server nut-upsmon nut-upsc nut-driver-usbhid-ups curl
-
-# Установить пакет (файл .apk, собранный через SDK, см. раздел «Сборка»)
-apk add --allow-untrusted ./luci-app-ups-manager-1.0.1-r1.apk
+apk add luci-base rpcd rpcd-mod-file curl \
+  nut nut-common nut-server nut-upsmon nut-upsc nut-upscmd \
+  nut-driver-usbhid-ups nut-driver-blazer_usb
+apk add --allow-untrusted ./luci-app-ups-manager-*.apk
 ```
 
-Готовых файлов в этом репозитории нет: пакет нужно собрать самостоятельно (см. ниже).
+Файл `.apk` берётся из артефакта GitHub Actions (см. раздел «Сборка»).
 
 ---
 
