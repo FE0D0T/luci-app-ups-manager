@@ -14,7 +14,8 @@
           "get_quality_events",
           "get_ops_events",
           "diagnose",
-          "test_notification"
+          "test_notification",
+          "get_beeper"
         ]
       },
       "uci": [
@@ -28,7 +29,10 @@
           "clear_ops_events",
           "test_connection",
           "diagnose",
-          "test_notification"
+          "test_notification",
+          "set_beeper_once",
+          "set_beeper_mode",
+          "clear_logs"
         ]
       },
       "uci": [

@@ -88,11 +88,11 @@ scan_devices() {
 					match_confidence="high"
 					[ -z "$mfr" ] && mfr="Santak (山特) / Phoenixtec"
 					;;
-				"0592") # Powercom (保利�?
+				"0592") # Powercom (保利金
 					is_ups=1
 					driver="usbhid-ups"
 					match_confidence="high"
-					[ -z "$mfr" ] && mfr="Powercom (保利�?"
+					[ -z "$mfr" ] && mfr="Powercom (保利金)"
 					;;
 				"0471") # Philips / OEM UPS
 					is_ups=1
@@ -110,17 +110,17 @@ scan_devices() {
 					match_confidence="high"
 					[ -z "$mfr" ] && mfr="Tripp Lite"
 					;;
-				"04b4"|"0001") # Cypress / Megatec USB chip (广泛用于山特、科华、雷迪司�?
+				"04b4"|"0001") # Cypress / Megatec USB chip (广泛用于山特、科华、雷迪司等)
 					case "$pid" in
 						"5500"|"0000"|"0002")
 							is_ups=1
 							driver="blazer_usb"
 							match_confidence="high"
-							[ -z "$mfr" ] && mfr="Megatec USB (山特/科华/雷迪司兼�?"
+							[ -z "$mfr" ] && mfr="Megatec USB (山特/科华/雷迪司兼容)"
 							;;
 					esac
 					;;
-				"1a86"|"10c4"|"0403") # WCH CH340 / Silabs CP2102 / FTDI (USB 转串�?UPS)
+				"1a86"|"10c4"|"0403") # WCH CH340 / Silabs CP2102 / FTDI (USB 转串口 UPS)
 					local p_lower=$(echo "$prod $mfr" | tr 'A-Z' 'a-z')
 					case "$p_lower" in
 						*ups*|*santak*|*kehua*|*power*)
@@ -179,7 +179,7 @@ scan_devices() {
 					is_ups=1
 					driver="blazer_usb"
 					match_confidence="high"
-					[ -z "$mfr" ] && mfr="Ladis (雷迪�?"
+					[ -z "$mfr" ] && mfr="Ladis (雷迪司)"
 					;;
 				*ups*|*battery*|*power*)
 					is_ups=1
@@ -263,7 +263,29 @@ get_status() {
 	output_voltage=$(echo "$raw" | awk -F': ' '$1=="output.voltage"{print $2}')
 	output_freq=$(echo "$raw" | awk -F': ' '$1=="output.frequency"{print $2}')
 	ups_load=$(echo "$raw" | awk -F': ' '$1=="ups.load"{print $2}')
+	# Процент заряда по напряжению батареи (формула производителя)
+	local battery_charge_calc=""
+	if [ -n "$battery_voltage" ]; then
+		local v_lo v_hi
+		v_lo=$(uci_get "${CONF}.ups.battery_voltage_low" "10.98")
+		v_hi=$(uci_get "${CONF}.ups.battery_voltage_high" "12.60")
+		[ -n "$v_lo" ] || v_lo=10.98
+		[ -n "$v_hi" ] || v_hi=12.60
+		battery_charge_calc=$(awk "BEGIN { v = $battery_voltage; lo = $v_lo; hi = $v_hi; if (hi <= lo) exit; p = int(100 * (v - lo) / (hi - lo) + 0.5); if (p > 100) p = 100; if (p < 0) p = 0; printf \"%d\", p }" 2>/dev/null)
+	fi
 	ups_temp=$(echo "$raw" | awk -F': ' '$1=="ups.temperature"{print $2}')
+	# Оценка времени работы, если драйвер не отдаёт battery.runtime
+	local runtime_est=""
+	if [ -z "$battery_runtime" ] && [ -n "$battery_charge" ] && [ -n "$ups_load" ]; then
+		local cap_ah eff nom_w
+		cap_ah=$(uci_get "${CONF}.ups.battery_capacity_ah" "7")
+		eff=$(uci_get "${CONF}.ups.inverter_efficiency" "0.85")
+		nom_w=$(uci_get "${CONF}.ups.nominal_power" "450")
+		[ -n "$cap_ah" ] || cap_ah=7
+		[ -n "$eff" ] || eff=0.85
+		[ -n "$nom_w" ] || nom_w=450
+		runtime_est=$(awk "BEGIN { load_w = $nom_w * $ups_load / 100; if (load_w <= 0) exit; printf \"%d\", $cap_ah * 12 * $battery_charge / 100 * $eff * 3600 / load_w }" 2>/dev/null)
+	fi
 	ups_model=$(echo "$raw" | awk -F': ' '$1=="device.model" || $1=="ups.model"{print $2; exit}')
 	ups_mfr=$(echo "$raw" | awk -F': ' '$1=="device.mfr" || $1=="ups.mfr"{print $2; exit}')
 	ups_realpower=$(echo "$raw" | awk -F': ' '$1=="ups.realpower"{print $2}')
@@ -361,7 +383,9 @@ get_status() {
 	"is_on_battery": $is_ob,
 	"is_low_battery": $is_lb,
 	"battery_charge": ${battery_charge:-null},
+	"battery_charge_calc": ${battery_charge_calc:-null},
 	"battery_runtime": ${battery_runtime:-null},
+	"battery_runtime_est": ${runtime_est:-null},
 	"battery_voltage": ${battery_voltage:-null},
 	"input_voltage": ${input_voltage:-null},
 	"input_freq": ${input_freq:-null},
@@ -433,15 +457,16 @@ test_connection() {
 # Get history data from ring buffer (parsed from history.csv)
 get_history() {
 	local csv_file="${RUNTIME_DIR}/history.csv"
+	[ "$1" = "minute" ] && csv_file="${RUNTIME_DIR}/history_1m.csv"
 	echo -n '{"points":['
 	local first=1
 
 	if [ -s "$csv_file" ]; then
-		while IFS=',' read -r t v vo c l p ob; do
+		while IFS=',' read -r t v vo c l p ob vmin obc; do
 			[ -z "$t" ] && continue
 			[ $first -eq 0 ] && echo -n ','
 			first=0
-			echo -n "{\"t\":${t:-0},\"v\":${v:-0},\"vo\":${vo:-0},\"c\":${c:-0},\"l\":${l:-0},\"p\":${p:-0},\"ob\":${ob:-0}}"
+			echo -n "{\"t\":${t:-0},\"v\":${v:-0},\"vo\":${vo:-0},\"c\":${c:-0},\"l\":${l:-0},\"p\":${p:-0},\"ob\":${ob:-0},\"vmin\":${vmin:-0},\"obc\":${obc:-0}}"
 		done < "$csv_file"
 	fi
 
@@ -494,42 +519,42 @@ diagnose() {
 	[ $first -eq 0 ] && echo -n ','
 	first=0
 	if command -v upsd >/dev/null 2>&1 && command -v upsc >/dev/null 2>&1; then
-		echo -n '{"item":"nut_binaries","title":"NUT 核心程序","status":"ok","message":"upsd �?upsc 均已安装"}'
+		echo -n '{"item":"nut_binaries","title":"Ядро NUT","status":"ok","message":"upsd и upsc установлены"}'
 	else
-		echo -n '{"item":"nut_binaries","title":"NUT 核心程序","status":"error","message":"缺少 nut-server �?nut-upsc 软件�?}'
+		echo -n '{"item":"nut_binaries","title":"Ядро NUT","status":"error","message":"Не найдены nut-server или nut-upsc"}'
 	fi
 
 	# Check 2: upsd process running
 	[ $first -eq 0 ] && echo -n ','
 	if pgrep upsd >/dev/null 2>&1; then
-		echo -n '{"item":"upsd_process","title":"upsd 守护进程","status":"ok","message":"服务正在正常运行"}'
+		echo -n '{"item":"upsd_process","title":"Демон upsd","status":"ok","message":"Служба работает нормально"}'
 	else
-		echo -n '{"item":"upsd_process","title":"upsd 守护进程","status":"warning","message":"upsd 未在后台运行"}'
+		echo -n '{"item":"upsd_process","title":"Демон upsd","status":"warning","message":"upsd не запущен"}'
 	fi
 
 	# Check 3: ups driver process
 	[ $first -eq 0 ] && echo -n ','
 	if pgrep -f "upsdrvctl" >/dev/null 2>&1 || pgrep -f "usbhid-ups" >/dev/null 2>&1 || pgrep -f "blazer" >/dev/null 2>&1; then
-		echo -n '{"item":"nut_driver","title":"NUT 硬件驱动","status":"ok","message":"检测到硬件驱动进程运行�?}'
+		echo -n '{"item":"nut_driver","title":"Драйвер NUT","status":"ok","message":"Процесс драйвера запущен"}'
 	else
-		echo -n '{"item":"nut_driver","title":"NUT 硬件驱动","status":"warning","message":"未检测到活跃的驱动进�?}'
+		echo -n '{"item":"nut_driver","title":"Драйвер NUT","status":"warning","message":"Процесс драйвера не найден"}'
 	fi
 
 	# Check 4: USB device nodes permissions
 	[ $first -eq 0 ] && echo -n ','
 	if [ -d "/dev/bus/usb" ]; then
-		echo -n '{"item":"usb_subsystem","title":"USB 子系�?,"status":"ok","message":"/dev/bus/usb 正常挂载"}'
+		echo -n '{"item":"usb_subsystem","title":"Подсистема USB"status":"ok","message":"Шина USB смонтирована"}'
 	else
-		echo -n '{"item":"usb_subsystem","title":"USB 子系�?,"status":"warning","message":"/dev/bus/usb 未发�?}'
+		echo -n '{"item":"usb_subsystem","title":"Подсистема USB"status":"warning","message":"Шина USB не смонтирована"}'
 	fi
 
 	# Check 5: listen address security
 	[ $first -eq 0 ] && echo -n ','
 	local laddr=$(uci_get "${CONF}.nut_service.listen_address" "127.0.0.1")
 	if [ "$laddr" = "0.0.0.0" ]; then
-		echo -n '{"item":"security_listen","title":"网络监听安全","status":"warning","message":"当前监听 0.0.0.0，存在公网泄露风险，建议绑定 127.0.0.1 或仅局域网内网 IP"}'
+		echo -n '{"item":"security_listen","title":"Безопасность сетевого прослушивания","status":"warning","message":"Сейчас слушается 0.0.0.0: риск утечки в интернет. Укажите 127.0.0.1 или IP локальной сети"}'
 	else
-		echo -n '{"item":"security_listen","title":"网络监听安全","status":"ok","message":"已绑定受信任地址: '"$laddr"'"}'
+		echo -n '{"item":"security_listen","title":"Безопасность сетевого прослушивания","status":"ok","message":"Привязан доверенный адрес: '"$laddr"'"}'
 	fi
 
 	echo -n ']}'
@@ -538,7 +563,7 @@ diagnose() {
 # Test notification dispatch
 test_notification() {
 	if [ -x "/usr/bin/ups-manager-notify" ]; then
-		/usr/bin/ups-manager-notify test "这来�?UPS Manager 联调测试通知"
+		/usr/bin/ups-manager-notify test "Тестовое уведомление UPS Manager"
 		echo '{"success":true,"message":"Test notification sent"}'
 	else
 		echo '{"success":false,"error":"ups-manager-notify script not executable"}'
@@ -571,6 +596,66 @@ get_quality_events() {
 	else
 		echo '{"events":[]}'
 	fi
+}
+
+# Читает значение поля из JSON-аргументов rpcd (stdin), например {"state":"on"}
+jsonfield_arg() {
+	# $1 = имя поля, $2 = весь JSON (уже прочитанный из stdin)
+	echo "$2" | sed -n 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
+}
+
+# Очистка журнала диагностики (events.log). Усечение, а не удаление:
+# демон продолжает писать в тот же файл.
+clear_logs() {
+	mkdir -p "$LOG_DIR" 2>/dev/null
+	: > "$LOG_FILE" 2>/dev/null
+	echo '{"success":true}'
+}
+
+# Звук ИБП (через ups-manager-beeper)
+get_beeper() {
+	local state mode on_at off_at
+	state=$(/usr/bin/ups-manager-beeper status 2>/dev/null)
+	[ -n "$state" ] || state="unknown"
+	mode=$(uci_get "${CONF}.beeper.mode" "off")
+	on_at=$(uci_get "${CONF}.beeper.schedule_on" "07:00")
+	off_at=$(uci_get "${CONF}.beeper.schedule_off" "23:00")
+	# Что сейчас действует по расписанию (только для режима schedule)
+	local now_state=""
+	if [ "$mode" = "schedule" ]; then
+		now_state=$(/usr/bin/ups-manager-beeper schedule-now 2>/dev/null)
+	fi
+	echo -n "{\"state\":\"$state\",\"mode\":\"$mode\",\"schedule_on\":\"$on_at\",\"schedule_off\":\"$off_at\",\"now_state\":\"$now_state\"}"
+}
+
+# Однократно: привести звук в состояние (on|off)
+set_beeper_once() {
+	case "$1" in
+		on|off) ;;
+		*) echo '{"success":false,"error":"Use on or off"}'; return 0 ;;
+	esac
+	if /usr/bin/ups-manager-beeper set "$1" >/dev/null 2>&1; then
+		echo '{"success":true}'
+	else
+		echo '{"success":false,"error":"Не удалось изменить звук. Проверьте связь с UPS и пароль admin."}'
+	fi
+}
+
+# Постоянный режим или расписание: mode=off|permanent_off|schedule
+set_beeper_mode() {
+	local mode="$1" on_at="$2" off_at="$3"
+	case "$mode" in
+		off|permanent_off|schedule) ;;
+		*) echo '{"success":false,"error":"Unknown mode"}'; return 0 ;;
+	esac
+	uci -q set ${CONF}.beeper=beeper
+	uci -q set ${CONF}.beeper.mode="$mode"
+	[ -n "$on_at" ] && uci -q set ${CONF}.beeper.schedule_on="$on_at"
+	[ -n "$off_at" ] && uci -q set ${CONF}.beeper.schedule_off="$off_at"
+	uci -q commit ${CONF}
+	# Применить режим сразу, не дожидаясь очередной проверки службы (до 2 минут)
+	/usr/bin/ups-manager-beeper enforce >/dev/null 2>&1 &
+	echo '{"success":true}'
 }
 
 # Clear recovered power quality events
@@ -624,15 +709,19 @@ case "$1" in
 		echo '  "scan_devices": {},'
 		echo '  "test_connection": {},'
 		echo '  "get_raw_data": {},'
-		echo '  "get_history": {},'
+		echo '  "get_history": {"range": "string"},'
 		echo '  "get_energy": {},'
 		echo '  "get_logs": {},'
+		echo '  "clear_logs": {},'
 		echo '  "get_quality_events": {},'
 		echo '  "clear_quality_events": {},'
 		echo '  "get_ops_events": {},'
 		echo '  "clear_ops_events": {},'
 		echo '  "diagnose": {},'
-		echo '  "test_notification": {}'
+		echo '  "test_notification": {},'
+		echo '  "get_beeper": {},'
+		echo '  "set_beeper_once": {"state": "string"},'
+		echo '  "set_beeper_mode": {"mode": "string", "schedule_on": "string", "schedule_off": "string"}'
 		echo '}'
 		;;
 	call)
@@ -641,15 +730,19 @@ case "$1" in
 			scan_devices) scan_devices ;;
 			test_connection) test_connection ;;
 			get_raw_data) get_raw_data ;;
-			get_history) get_history ;;
+			get_history) ARGS_JSON=$(cat 2>/dev/null); get_history "$(jsonfield_arg range "$ARGS_JSON")" ;;
 			get_energy) get_energy ;;
 			get_logs) get_logs ;;
+			clear_logs) clear_logs ;;
 			get_quality_events) get_quality_events ;;
 			clear_quality_events) clear_quality_events ;;
 			get_ops_events) get_ops_events ;;
 			clear_ops_events) clear_ops_events ;;
 			diagnose) diagnose ;;
 			test_notification) test_notification ;;
+			get_beeper) get_beeper ;;
+			set_beeper_once) ARGS_JSON=$(cat 2>/dev/null); set_beeper_once "$(jsonfield_arg state "$ARGS_JSON")" ;;
+			set_beeper_mode) ARGS_JSON=$(cat 2>/dev/null); set_beeper_mode "$(jsonfield_arg mode "$ARGS_JSON")" "$(jsonfield_arg schedule_on "$ARGS_JSON")" "$(jsonfield_arg schedule_off "$ARGS_JSON")" ;;
 			*)
 				echo '{"error":"Unsupported method"}'
 				exit 1

@@ -7,7 +7,9 @@
       "path": "admin/services/ups_manager/overview"
     },
     "depends": {
-      "acl": ["luci-app-ups-manager"]
+      "acl": [
+        "luci-app-ups-manager"
+      ]
     }
   },
   "admin/services/ups_manager/overview": {
@@ -88,6 +90,14 @@
     "action": {
       "type": "view",
       "path": "ups-manager/diagnosis"
+    }
+  },
+  "admin/services/ups_manager/beeper": {
+    "title": "Звук",
+    "order": 11,
+    "action": {
+      "type": "view",
+      "path": "ups-manager/beeper"
     }
   }
 }

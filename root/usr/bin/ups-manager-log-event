@@ -19,7 +19,7 @@ if [ "$TYPE" = "quality" ]; then
 	SEVERITY="${2:-warning}"
 	VALUE="$3"
 	STATUS="${4:-recovered}"
-	DURATION="${5:-瞬态}"
+	DURATION="${5:-—}"
 	DETAIL="$6"
 	[ -z "$TITLE" ] && exit 0
 
