@@ -6,10 +6,9 @@
 
 ## 1. Скачать пакет
 
-1. Откройте https://github.com/FE0D0T/luci-app-ups-manager/actions
-2. Выберите последний успешный запуск **Build APK via OpenWrt SDK** (зелёная галочка).
-3. Внизу страницы скачайте артефакт `luci-app-ups-manager-apk`.
-4. Распакуйте zip: внутри будет файл `luci-app-ups-manager-*.apk`.
+Скачайте `.apk` из последнего релиза: https://github.com/FE0D0T/luci-app-ups-manager/releases/latest
+
+В разделе **Assets** выберите файл `luci-app-ups-manager-*.apk`.
 
 ## 2. Установить зависимости из официального репозитория
 

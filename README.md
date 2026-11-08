@@ -161,7 +161,7 @@ apk add luci-base rpcd rpcd-mod-file curl \
 apk add --allow-untrusted ./luci-app-ups-manager-*.apk
 ```
 
-Файл `.apk` берётся из артефакта GitHub Actions (см. раздел «Сборка»).
+Файл `.apk` скачивается из последнего релиза: https://github.com/FE0D0T/luci-app-ups-manager/releases/latest
 
 ---
 
