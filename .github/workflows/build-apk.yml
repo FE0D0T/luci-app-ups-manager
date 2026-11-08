@@ -40,8 +40,28 @@ jobs:
           make defconfig
 
       - name: Compile package
+        id: compile
         working-directory: sdk
-        run: make package/luci-app-ups-manager/compile V=s -j"$(nproc)"
+        run: |
+          set -o pipefail
+          make package/luci-app-ups-manager/compile V=s -j1 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+
+      - name: Show build errors in summary
+        if: failure()
+        run: |
+          {
+            echo "## Ошибки сборки"
+            echo '```'
+            grep -nE 'Error|ERROR|error:|\*\*\*|No rule|not found|cannot|undefined' "$GITHUB_WORKSPACE/build.log" | tail -n 60 || echo "строк с ошибками не найдено"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Collect APK artifacts
         run: |
