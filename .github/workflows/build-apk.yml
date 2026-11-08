@@ -34,17 +34,28 @@ jobs:
       - name: Update feeds and select package
         working-directory: sdk
         run: |
-          ./scripts/feeds update luci packages
-          ./scripts/feeds install luci-base nut nut-common nut-server nut-upsmon nut-upsc nut-upscmd nut-driver-usbhid-ups nut-driver-blazer_usb curl rpcd rpcd-mod-file
+          set -o pipefail
+          {
+            ./scripts/feeds update luci packages
+            ./scripts/feeds install luci-base nut nut-common nut-server nut-upsmon nut-upsc nut-upscmd nut-driver-usbhid-ups nut-driver-blazer_usb curl rpcd rpcd-mod-file
+          } 2>&1 | tee "$GITHUB_WORKSPACE/feeds.log"
           printf '%s\n' \
             "CONFIG_PACKAGE_luci-app-ups-manager=m" \
             "CONFIG_PACKAGE_ucode=y" \
             "CONFIG_PACKAGE_libucode=y" \
             "CONFIG_PACKAGE_liblucihttp-ucode=y" > .config
           make defconfig
-          # заголовки ucode/module.h нужны lucihttp: собираем ucode до него
-          make package/feeds/base/ucode/compile V=s -j1 || make package/ucode/compile V=s -j1
           grep -E 'ucode|lucihttp' .config | head -n 20
+
+      - name: Show feeds log on failure
+        if: failure()
+        run: |
+          {
+            echo "## Ошибка feeds"
+            echo '```'
+            tail -n 60 "$GITHUB_WORKSPACE/feeds.log" 2>/dev/null || echo "лог feeds не создан"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Compile package
         id: compile
