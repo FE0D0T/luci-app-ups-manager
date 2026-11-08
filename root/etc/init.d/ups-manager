@@ -136,8 +136,10 @@ start_service() {
 	# Звук ИБП: постоянный режим и расписание проверяются каждые 2 минуты
 	if [ -x /usr/bin/ups-manager-beeper ]; then
 		procd_open_instance "ups-manager-beeper"
-		procd_set_param command /bin/sh -c 'while true; do /usr/bin/ups-manager-beeper enforce; sleep 120; done'
+		procd_set_param command /bin/sh -c 'while true; do /usr/bin/ups-manager-beeper enforce >/dev/null 2>&1; sleep 120; done'
 		procd_set_param respawn 3600 5 0
+		procd_set_param stdout 0
+		procd_set_param stderr 0
 		procd_close_instance
 	fi
 
