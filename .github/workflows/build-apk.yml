@@ -1,0 +1,57 @@
+name: Build APK via OpenWrt SDK
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SDK_URL: "https://downloads.openwrt.org/releases/25.12.0/targets/x86/64/openwrt-sdk-25.12.0-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst"
+    steps:
+      - name: Checkout package source
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gawk gettext libncurses-dev zstd python3 wget rsync
+
+      - name: Download OpenWrt SDK
+        run: |
+          wget -q "$SDK_URL" -O sdk.tar.zst
+          tar --zstd -xf sdk.tar.zst
+          mv openwrt-sdk-* sdk
+
+      - name: Place package into SDK
+        run: |
+          mkdir -p sdk/package/luci-app-ups-manager
+          rsync -a --exclude='.git' --exclude='.github' ./ sdk/package/luci-app-ups-manager/
+
+      - name: Update feeds and select package
+        working-directory: sdk
+        run: |
+          ./scripts/feeds update luci packages
+          ./scripts/feeds install luci-base nut nut-common nut-server nut-upsmon nut-upsc nut-upscmd nut-driver-usbhid-ups nut-driver-blazer_usb curl rpcd rpcd-mod-file
+          echo "CONFIG_PACKAGE_luci-app-ups-manager=m" > .config
+          make defconfig
+
+      - name: Compile package
+        working-directory: sdk
+        run: make package/luci-app-ups-manager/compile V=s -j"$(nproc)"
+
+      - name: Collect APK artifacts
+        run: |
+          mkdir -p out
+          find sdk/bin -name 'luci-app-ups-manager-*.apk' -exec cp {} out/ \;
+          ls -la out
+          test -n "$(ls out/*.apk 2>/dev/null)" || { echo "APK не найден"; exit 1; }
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-app-ups-manager-apk
+          path: out/*.apk

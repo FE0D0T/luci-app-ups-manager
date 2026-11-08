@@ -14,7 +14,7 @@ PKG_MAINTAINER:=Gilbert Liu & Contributors
 
 LUCI_TITLE:=LuCI support for UPS Manager
 LUCI_DESCRIPTION:=Enterprise UPS Power Management System for OpenWrt / iStoreOS with auto-discovery, telemetry, outage alerts and shutdown protection.
-LUCI_DEPENDS:=+luci-base +rpcd +rpcd-mod-file +nut +nut-common +nut-server +nut-upsmon +nut-upsc +nut-driver-usbhid-ups +curl
+LUCI_DEPENDS:=+luci-base +rpcd +rpcd-mod-file +nut +nut-common +nut-server +nut-upsmon +nut-upsc +nut-upscmd +nut-driver-usbhid-ups +nut-driver-blazer_usb +curl
 LUCI_PKGARCH:=all
 
 define Package/$(PKG_NAME)/conffiles
