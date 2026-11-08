@@ -512,7 +512,7 @@ return view.extend({
 			E('div', { 'class': 'pq-rule-unsupported-note' }, [
 				E('span', { 'style': 'color:#3b82f6;font-size:0.85rem;' }, 'ℹ️'),
 				_('当前 UPS 未提供对应数据字段')
-			]) : null;
+			]) : '';
 
 		return E('div', { 'class': cardClass }, [
 			E('div', { 'class': 'pq-rule-title-row' }, [
@@ -561,7 +561,7 @@ return view.extend({
 			E('div', { 'class': 'pq-rule-unsupported-note' }, [
 				E('span', { 'style': 'color:#3b82f6;font-size:0.85rem;' }, 'ℹ️'),
 				_('当前 UPS 未提供对应数据字段')
-			]) : null;
+			]) : '';
 
 		return E('div', { 'class': cardClass }, [
 			E('div', { 'class': 'pq-rule-title-row' }, [

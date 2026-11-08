@@ -23,6 +23,55 @@ uci_get() {
 	fi
 }
 
+uci_get_energy_val() {
+	if [ -f "$ENERGY_FILE" ]; then
+		awk -v k="$1" -v d="$2" 'BEGIN{v=d} { if (match($0, "\"" k "\":[0-9.]+")) { s=substr($0, RSTART, RLENGTH); sub(".*:", "", s); v=s } } END{ print v }' "$ENERGY_FILE"
+	else
+		echo "$2"
+	fi
+}
+
+# Фиксация отклонений качества электроэнергии (пороги из UCI quality_policy).
+# Состояние каждого правила хранится в QSTATE_<имя>=0|1, чтобы не писать дубли.
+quality_check() {
+	local name="$1" val="$2" trig="$3" rec="$4" dir="$5" title="$6" sev="$7"
+	[ -n "$val" ] || return 0
+	local var="QSTATE_$name"
+	eval "local cur=\${$var:-0}"
+	local bad=0
+	if [ "$dir" = "low" ]; then
+		if [ "$cur" = "0" ]; then [ "$(awk "BEGIN{print ($val < $trig)}")" = "1" ] && bad=1; else [ "$(awk "BEGIN{print ($val < $rec)}")" = "1" ] && bad=1; fi
+	else
+		if [ "$cur" = "0" ]; then [ "$(awk "BEGIN{print ($val > $trig)}")" = "1" ] && bad=1; else [ "$(awk "BEGIN{print ($val > $rec)}")" = "1" ] && bad=1; fi
+	fi
+	if [ "$bad" = "1" ] && [ "$cur" = "0" ]; then
+		eval "$var=1"; eval "QSTART_$name=$NOW"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" quality "$title" "$sev" "$val" "ongoing" "" "Отклонение началось"
+	elif [ "$bad" = "0" ] && [ "$cur" = "1" ]; then
+		eval "$var=0"
+		eval "local st=\${QSTART_$name:-$NOW}"
+		local dur=$((NOW - st))
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" quality "$title" "$sev" "$val" "recovered" "${dur} с" "Параметр вернулся в норму"
+	fi
+}
+
+# Правила статуса ИБП: флаг в ups.status = отклонение. Уровень из UCI quality_policy.
+status_rule() {
+	local key="$1" present="$2" title="$3" default_sev="$4"
+	local sev
+	sev=$(uci_get "${CONF}.quality.$key" "$default_sev")
+	local var="SSTATE_$key"
+	eval "local cur=\${$var:-0}"
+	if [ "$present" = "1" ] && [ "$cur" = "0" ]; then
+		eval "$var=1"; eval "SSTART_$key=$NOW"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" quality "$title" "$sev" "$STATUS_VAL" "ongoing" "" "Флаг статуса ИБП появился"
+	elif [ "$present" = "0" ] && [ "$cur" = "1" ]; then
+		eval "$var=0"
+		eval "local st=\${SSTART_$key:-$NOW}"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" quality "$title" "$sev" "$STATUS_VAL" "recovered" "$((NOW - st)) с" "Флаг статуса ИБП снят"
+	fi
+}
+
 log_event() {
 	local level="$1"
 	local msg="$2"
@@ -39,13 +88,21 @@ trap 'log_event INFO "Daemon stopping..."; rm -f /tmp/run/ups-manager.pid; exit 
 
 echo $$ > /tmp/run/ups-manager.pid
 log_event INFO "UPS Manager daemon v1.0.0 started."
-[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "ops" "info" "UPS 守护引擎启动" "UPS Manager 后台采集守护进程已就绪运行。"
+[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "ops" "info" "Запуск демона UPS" "Фоновый сборщик данных UPS Manager запущен и работает."
 
 PREV_ONLINE=1
 PREV_ON_BATTERY=0
 PREV_LOW_BATTERY=0
 ON_BATTERY_START_TS=0
 LAST_FLUSH_TS=$(date +%s)
+LAST_MIN_TS=$(date +%s)
+# Накопление энергии (Wh): сутки и месяц, сброс по смене даты/месяца
+LAST_E_TS=$(date +%s)
+TODAY_DATE=$(date +%Y-%m-%d)
+MONTH_KEY=$(date +%Y-%m)
+TODAY_WH=$(uci_get_energy_val today_wh 0)
+MONTH_WH=$(uci_get_energy_val month_wh 0)
+
 LAST_NOTIFY_TS=0
 
 # Initialize history file if empty
@@ -85,7 +142,7 @@ while true; do
 		# UPS Communication lost
 		if [ $PREV_ONLINE -eq 1 ]; then
 			log_event WARN "Lost communication with UPS ($TARGET)."
-			[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "comm" "warn" "⚠️ 警报: UPS 通信中断，设备已离线！" "UPS 通信中断超过检测周期，主板 USB 接口或 NUT 驱动已断开连接。"
+			[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "comm" "warn" "⚠️ Тревога: связь с ИБП потеряна, устройство офлайн!" "Связь с ИБП не восстановилась за период опроса. Возможно, отключён USB-порт платы или драйвер NUT."
 			if [ -x "$NOTIFY_SCRIPT" ]; then
 				"$NOTIFY_SCRIPT" "comm_lost" "UPS 通信中断: 无法连接 $TARGET" &
 			fi
@@ -100,7 +157,7 @@ EOF
 
 	if [ $PREV_ONLINE -eq 0 ]; then
 		log_event INFO "Restored communication with UPS ($TARGET)."
-		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "comm" "success" "⚡ UPS 通信已恢复正常" "与 UPS ($TARGET) 通信链路已重建并连通，设备已恢复在线状态。"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "comm" "success" "⚡ Связь с ИБП восстановлена" "Связь с ИБП ($TARGET) восстановлена, устройство снова онлайн."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
 			"$NOTIFY_SCRIPT" "comm_restored" "UPS 通信恢复正常: $TARGET" &
 		fi
@@ -166,14 +223,14 @@ EOF
 			POWER_SOURCE="firmware_watts"
 		# 3.3 Firmware reported power.nominal VA
 		elif [ -n "$HW_NOM_VA" ] && [ "$HW_NOM_VA" -gt 0 ] 2>/dev/null; then
-			local pf=0.6
+			pf=0.6
 			case "$MODEL" in *Online*|*RT*|*C1K*|*C2K*|*C3K*|*C6K*) pf=0.8 ;; esac
 			NOMINAL_POWER=$(awk "BEGIN {printf \"%d\", $HW_NOM_VA * $pf}" 2>/dev/null)
 			POWER_SOURCE="firmware_va"
 		# 3.4 Smart Model Signature Extraction
 		else
 			POWER_SOURCE="model_inferred"
-			local m_upper=$(echo "$MODEL" | tr 'a-z' 'A-Z')
+			m_upper=$(echo "$MODEL" | tr 'a-z' 'A-Z')
 			case "$m_upper" in
 				*10K*|*10000*) NOMINAL_POWER=9000 ;;
 				*6K*|*6000*) NOMINAL_POWER=5400 ;;
@@ -227,16 +284,16 @@ EOF
 	if [ $IS_OB -eq 1 ] && [ $PREV_ON_BATTERY -eq 0 ]; then
 		ON_BATTERY_START_TS=$NOW
 		log_event WARN "Power outage detected! Switched to battery power (Charge: ${CHARGE}%, Runtime: ${RUNTIME}s)."
-		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ 警报: 市电已中断，已切换为电池供电！" "检测到交流市电断开 (输入电压 ${INPUT_V:-0.0}V)，UPS 已瞬间切换至电池组逆变供电 (输出 ${OUTPUT_V:-220.0}V，当前负载 ${LOAD_PCT:-0}%，电池电量 ${CHARGE:-100}%)。"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ Тревога: сеть отключена, переход на питание от батареи!" "Обнаружено отключение сети переменного тока (входное напряжение ${INPUT_V:-0.0} В). ИБП перешёл на питание от батареи (выход ${OUTPUT_V:-220.0} В, нагрузка ${LOAD_PCT:-0}%, заряд батареи ${CHARGE:-100}%)."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
 			"$NOTIFY_SCRIPT" "on_battery" "市电供电中断！UPS 已切换至电池供电 (电量: ${CHARGE}%, 预计续航: ${RUNTIME}秒)" &
 		fi
 		PREV_ON_BATTERY=1
 	elif [ $IS_OB -eq 0 ] && [ $PREV_ON_BATTERY -eq 1 ]; then
-		local outage_sec=$((NOW - ON_BATTERY_START_TS))
+		outage_sec=$((NOW - ON_BATTERY_START_TS))
 		ON_BATTERY_START_TS=0
 		log_event INFO "Mains power restored after ${outage_sec}s. Running on line power."
-		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "success" "⚡ 市电已恢复正常供电" "输入市电已恢复正常 (${INPUT_V:-220.0}V / ${INPUT_FREQ:-50.0} Hz)，断电持续 ${outage_sec} 秒，输出稳压供电中。"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "success" "⚡ Сеть восстановлена" "Входное напряжение сети в норме (${INPUT_V:-220.0} В / ${INPUT_FREQ:-50.0} Гц), отключение длилось ${outage_sec} с, выход питается от сети."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
 			"$NOTIFY_SCRIPT" "online" "市电已恢复供电！(断电持续: ${outage_sec}秒, 当前电量: ${CHARGE}%)" &
 		fi
@@ -246,7 +303,7 @@ EOF
 	# Low battery detection
 	if [ $IS_LB -eq 1 ] && [ $PREV_LOW_BATTERY -eq 0 ]; then
 		log_event CRIT "UPS battery is critically low! (Charge: ${CHARGE}%, Runtime: ${RUNTIME}s)."
-		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ 紧急: UPS 电池电量严重偏低！" "当前电池电量仅剩 ${CHARGE:-0}% (预计续航: ${RUNTIME:-0}秒)，即将达到保护关机阈值。"
+		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ Критично: заряд батареи ИБП очень низкий!" "Осталось ${CHARGE:-0}% заряда (ожидаемое время работы: ${RUNTIME:-0} с), скоро будет достигнут порог защитного выключения."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
 			"$NOTIFY_SCRIPT" "low_battery" "UPS 电池严重偏低！即将达到保护关机阈值 (当前电量: ${CHARGE}%)" &
 		fi
@@ -281,7 +338,7 @@ EOF
 
 		if [ $TRIGGER_SHUTDOWN -eq 1 ]; then
 			log_event CRIT "Triggering automated emergency shutdown: $TRIGGER_REASON"
-			[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "ops" "warn" "🚨 触发自动化紧急停机保护" "停机判定原因: $TRIGGER_REASON"
+			[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "ops" "warn" "🚨 Сработала автоматическая защита: аварийное выключение" "Причина выключения: $TRIGGER_REASON"
 			if [ -x "$SHUTDOWN_SCRIPT" ]; then
 				"$SHUTDOWN_SCRIPT" trigger "$TRIGGER_REASON" &
 			fi
@@ -290,8 +347,51 @@ EOF
 
 	# Robust Ring-buffer append in tmpfs (CSV format)
 	# Fields: timestamp,input_v,output_v,charge,load,power,on_battery
+	# Качество электроэнергии: отклонения по порогам UCI (гистерезис по порогам восстановления)
+	quality_check in_volt_low "$INPUT_V" "$(uci_get ${CONF}.quality.in_volt_low_trig 190)" "$(uci_get ${CONF}.quality.in_volt_low_rec 200)" low 'Входное напряжение: низкое' warning
+	quality_check in_volt_high "$INPUT_V" "$(uci_get ${CONF}.quality.in_volt_high_trig 250)" "$(uci_get ${CONF}.quality.in_volt_high_rec 245)" high 'Входное напряжение: высокое' warning
+	quality_check in_freq_low "$INPUT_FREQ" "$(uci_get ${CONF}.quality.in_freq_low_trig 47)" "$(uci_get ${CONF}.quality.in_freq_low_rec 48)" low 'Входная частота: низкая' warning
+	quality_check in_freq_high "$INPUT_FREQ" "$(uci_get ${CONF}.quality.in_freq_high_trig 53)" "$(uci_get ${CONF}.quality.in_freq_high_rec 52)" high 'Входная частота: высокая' warning
+	quality_check load_high "$LOAD_PCT" "$(uci_get ${CONF}.quality.load_high_trig 80)" "$(uci_get ${CONF}.quality.load_high_rec 75)" high 'Нагрузка ИБП: высокая' warning
+	quality_check load_crit "$LOAD_PCT" "$(uci_get ${CONF}.quality.load_crit_trig 95)" "$(uci_get ${CONF}.quality.load_crit_rec 90)" high 'Нагрузка ИБП: критическая' critical
+	# Правила статуса ИБП (флаги NUT: OVER, BYPASS, RB, FAIL)
+	status_rule status_overload_sev $(echo "$STATUS_VAL" | grep -q OVER && echo 1 || echo 0) 'Перегрузка ИБП' critical
+	status_rule status_bypass_sev $(echo "$STATUS_VAL" | grep -q BYPASS && echo 1 || echo 0) 'ИБП перешёл в режим байпаса' warning
+	status_rule status_replace_batt_sev $(echo "$STATUS_VAL" | grep -q RB && echo 1 || echo 0) 'Требуется замена батареи' warning
+	status_rule status_selftest_fail_sev $(echo "$STATUS_VAL" | grep -q FAIL && echo 1 || echo 0) 'Ошибка самодиагностики ИБП' warning
+
 	HISTORY_CSV="${RUNTIME_DIR}/history.csv"
 	echo "$NOW,${INPUT_V:-0},${OUTPUT_V:-0},${CHARGE:-0},${LOAD_PCT:-0},${POWER:-0},$IS_OB" >> "$HISTORY_CSV"
+
+	# Интегрирование энергии: P(W) x dt(s) / 3600 -> Wh. Пауза ограничена 30 с.
+	DT=$((NOW - LAST_E_TS)); [ "$DT" -gt 30 ] && DT=30; [ "$DT" -lt 0 ] && DT=0
+	LAST_E_TS=$NOW
+	TODAY_NOW=$(date +%Y-%m-%d); MONTH_NOW=$(date +%Y-%m)
+	[ "$TODAY_NOW" != "$TODAY_DATE" ] && { TODAY_WH=0; TODAY_DATE=$TODAY_NOW; }
+	[ "$MONTH_NOW" != "$MONTH_KEY" ] && { MONTH_WH=0; MONTH_KEY=$MONTH_NOW; }
+	PW=$(awk "BEGIN{p=$POWER+0; if (p<0) p=0; print p}" 2>/dev/null)
+	ADD=$(awk "BEGIN{print $PW * $DT / 3600}" 2>/dev/null)
+	TODAY_WH=$(awk "BEGIN{print $TODAY_WH + $ADD}")
+	MONTH_WH=$(awk "BEGIN{print $MONTH_WH + $ADD}")
+	if [ $((NOW % 60)) -lt 4 ] || [ "$DT" -ge 30 ]; then
+		TODAY_KWH=$(awk "BEGIN{printf \"%.3f\", $TODAY_WH/1000}")
+		MONTH_KWH=$(awk "BEGIN{printf \"%.3f\", $MONTH_WH/1000}")
+		PEAK=$(awk -F',' 'BEGIN{m=0} {if ($6+0>m) m=$6+0} END{printf "%.1f", m}' "${RUNTIME_DIR}/history_1m.csv" 2>/dev/null)
+		AVG=$(awk -F',' '{s+=$6; n++} END{ if (n>0) printf "%.1f", s/n; else print 0}' "${RUNTIME_DIR}/history_1m.csv" 2>/dev/null)
+		[ -n "$PEAK" ] || PEAK=0
+		[ -n "$AVG" ] || AVG=0
+		echo "{\"today_kwh\":${TODAY_KWH:-0},\"month_kwh\":${MONTH_KWH:-0},\"today_wh\":${TODAY_WH:-0},\"month_wh\":${MONTH_WH:-0},\"peak_power\":${PEAK:-0},\"avg_power\":${AVG:-0},\"history\":[]}" > "$ENERGY_FILE.tmp" && mv "$ENERGY_FILE.tmp" "$ENERGY_FILE"
+	fi
+
+	# Минутные средние за сутки (1440 строк) в tmpfs: для диапазона 24 часа
+	if [ $((NOW - LAST_MIN_TS)) -ge 60 ] && [ -s "$HISTORY_CSV" ]; then
+		LAST_MIN_TS=$NOW
+		HISTORY_1M="${RUNTIME_DIR}/history_1m.csv"
+		tail -n 40 "$HISTORY_CSV" | awk -F',' -v ts="$NOW" 'BEGIN{n=0; vmin=999999; obc=0} {if (NF>=7) {v+=$2; vo+=$3; c+=$4; l+=$5; p+=$6; if ($7==1) obc++; ob=($7>ob?$7:ob); if ($2>0 && $2<vmin) vmin=$2; n++}} END { if (n>0) { if (vmin==999999) vmin=0; printf "%d,%.1f,%.1f,%.1f,%.1f,%.1f,%d,%.1f,%d\n", ts, v/n, vo/n, c/n, l/n, p/n, ob, vmin, obc } }' >> "$HISTORY_1M"
+		if [ $(wc -l < "$HISTORY_1M" 2>/dev/null || echo 0) -gt 1500 ]; then
+			tail -n 1440 "$HISTORY_1M" > "${HISTORY_1M}.tmp" && mv "${HISTORY_1M}.tmp" "$HISTORY_1M"
+		fi
+	fi
 
 	# Periodic trim: keep last 1200 points (~1 hour at 3s)
 	if [ $((NOW - LAST_FLUSH_TS)) -ge 60 ]; then
