@@ -35,17 +35,22 @@ jobs:
         working-directory: sdk
         run: |
           set -o pipefail
-          {
-            ./scripts/feeds update luci packages
-            ./scripts/feeds install luci-base nut nut-common nut-server nut-upsmon nut-upsc nut-upscmd nut-driver-usbhid-ups nut-driver-blazer_usb curl rpcd rpcd-mod-file
-          } 2>&1 | tee "$GITHUB_WORKSPACE/feeds.log"
-          printf '%s\n' \
-            "CONFIG_PACKAGE_luci-app-ups-manager=m" \
-            "CONFIG_PACKAGE_ucode=y" \
-            "CONFIG_PACKAGE_libucode=y" \
-            "CONFIG_PACKAGE_liblucihttp-ucode=y" > .config
+          ./scripts/feeds update luci packages 2>&1 | tee "$GITHUB_WORKSPACE/feeds.log"
+          ./scripts/feeds install luci-base 2>&1 | tee -a "$GITHUB_WORKSPACE/feeds.log"
+          # Только наш пакет. Зависимости (nut, rpcd, luci-base и т.д.) ставятся на роутере
+          # из официального репозитория, поэтому здесь они не нужны.
+          printf '%s\n' "CONFIG_PACKAGE_luci-app-ups-manager=m" > .config
           make defconfig
-          grep -E 'ucode|lucihttp' .config | head -n 20
+          grep -E 'luci-app-ups-manager' .config
+
+      - name: Drop runtime dependencies for compile
+        working-directory: sdk
+        run: |
+          # Зависимости LuCI тянут lucihttp, который не собирается в SDK.
+          # Пакет не содержит бинарников, поэтому сборке они не нужны;
+          # на роутере зависимости ставятся из официального репозитория через apk.
+          sed -i 's/^LUCI_DEPENDS:=.*$/LUCI_DEPENDS:=/' package/luci-app-ups-manager/Makefile
+          grep -n '^LUCI_DEPENDS' package/luci-app-ups-manager/Makefile
 
       - name: Show feeds log on failure
         if: failure()
