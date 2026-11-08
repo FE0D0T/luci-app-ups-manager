@@ -36,8 +36,14 @@ jobs:
         run: |
           ./scripts/feeds update luci packages
           ./scripts/feeds install luci-base nut nut-common nut-server nut-upsmon nut-upsc nut-upscmd nut-driver-usbhid-ups nut-driver-blazer_usb curl rpcd rpcd-mod-file
-          echo "CONFIG_PACKAGE_luci-app-ups-manager=m" > .config
+          printf '%s\n' \
+            "CONFIG_PACKAGE_luci-app-ups-manager=m" \
+            "# lucihttp собирается из GitHub и падает в SDK; на роутере ставится готовый пакет из репозитория 25.12" \
+            "CONFIG_PACKAGE_liblucihttp=n" \
+            "CONFIG_PACKAGE_liblucihttp-ucode=n" \
+            "CONFIG_PACKAGE_liblucihttp-lua=n" > .config
           make defconfig
+          grep -E 'lucihttp' .config || echo "lucihttp: не в .config"
 
       - name: Compile package
         id: compile
