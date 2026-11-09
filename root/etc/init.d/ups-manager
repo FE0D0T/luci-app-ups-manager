@@ -118,11 +118,13 @@ start_service() {
 			rm -f /var/run/nut/* /var/state/ups/* 2>/dev/null || true
 		fi
 
-		if ! pgrep -f "upsdrvctl" >/dev/null 2>&1 && ! pgrep -f "$driver" >/dev/null 2>&1; then
-			/usr/sbin/upsdrvctl start >/dev/null 2>&1 || true
+		# Драйвер и upsd запускаются в фоне и отвязываются от init-скрипта,
+		# иначе procd/apk ждут их завершения и зависают.
+		if ! pgrep -x upsdrvctl >/dev/null 2>&1 && ! pgrep -x "$driver" >/dev/null 2>&1; then
+			( /usr/sbin/upsdrvctl start </dev/null >/dev/null 2>&1 & )
 		fi
-		if ! pgrep upsd >/dev/null 2>&1; then
-			/usr/sbin/upsd >/dev/null 2>&1 || true
+		if ! pgrep -x upsd >/dev/null 2>&1; then
+			( /usr/sbin/upsd </dev/null >/dev/null 2>&1 & )
 		fi
 	fi
 
