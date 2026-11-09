@@ -118,33 +118,46 @@
 
 ```text
 luci-app-ups-manager/
-├── Makefile                               # Правила сборки OpenWrt
-├── LICENSE                                # Лицензия GPL-2.0
-├── README.md                              # Описание проекта
-├── root/                                  # Файлы, которые ставятся в систему
+├── Makefile                                # Правила сборки OpenWrt (версия, зависимости)
+├── LICENSE                                 # Лицензия GPL-2.0
+├── README.md                               # Описание проекта
+├── INSTALL.md                              # Пошаговая установка из .apk
+├── .github/workflows/build-apk.yml         # Сборка .apk через OpenWrt SDK и публикация релиза по тегу v*
+├── build/
+│   ├── build-workflow.yml                  # Сборка IPK (вспомогательная)
+│   └── build_ipk.sh                        # Сборка IPK вручную
+├── test/
+│   ├── verify_packaging.sh                 # Проверка структуры пакета
+│   └── test_suite.sh                       # Набор тестов
+├── root/                                   # Файлы, которые ставятся в систему
 │   ├── etc/
-│   │   ├── config/ups_manager              # Конфигурация UCI
-│   │   ├── init.d/ups-manager              # Служба procd
-│   │   └── uci-defaults/80_ups_manager     # Первичная настройка при установке
+│   │   ├── config/ups_manager              # Конфигурация UCI (пороги, звук, уведомления)
+│   │   ├── init.d/ups-manager              # Служба procd (NUT, демон, звук)
+│   │   └── uci-defaults/80_ups_manager     # Первичная настройка (пароли NUT)
 │   └── usr/
 │       ├── bin/
-│       │   ├── ups-manager-daemon          # Опрос ИБП, фильтрация, кольцевой буфер
+│       │   ├── ups-manager-daemon          # Опрос ИБП, фильтрация, журнал качества
+│       │   ├── ups-manager-beeper          # Управление звуком ИБП (режимы, расписание)
+│       │   ├── ups-manager-log-event       # Запись событий в журнал
 │       │   ├── ups-manager-notify          # Отправка уведомлений
 │       │   └── ups-manager-shutdown        # Согласованное выключение устройств
 │       ├── libexec/rpcd/luci.ups-manager   # Бэкенд ubus / rpcd
 │       └── share/
 │           ├── acl.d/luci-app-ups-manager.json     # Права доступа LuCI
 │           └── luci/menu.d/luci-app-ups-manager.json # Меню LuCI
-└── htdocs/luci-static/resources/view/ups-manager/
-    ├── overview.js                        # Обзор
-    ├── charts.js                          # История
-    ├── energy.js                          # Энергопотребление
-    ├── quality.js                         # Качество сети
-    ├── capability.js                      # Возможности ИБП
-    ├── settings.js                        # Настройки ИБП
-    ├── shutdown.js                        # Защита питания
-    ├── notification.js                    # Уведомления
-    └── diagnosis.js                       # Диагностика и журнал
+├── htdocs/luci-static/resources/view/ups-manager/
+│   ├── overview.js                         # Обзор
+│   ├── charts.js                           # История
+│   ├── energy.js                           # Энергопотребление
+│   ├── quality.js                          # Качество сети
+│   ├── capability.js                       # Возможности ИБП
+│   ├── settings.js                         # Настройки ИБП
+│   ├── shutdown.js                         # Защита питания
+│   ├── beeper.js                           # Звук ИБП (режимы и расписание)
+│   ├── notification.js                     # Уведомления
+│   ├── events.js                           # Журнал событий
+│   └── diagnosis.js                        # Диагностика и журнал
+└── docs/images/                            # Скриншоты для README
 ```
 
 ---
