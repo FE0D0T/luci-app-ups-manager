@@ -1,4 +1,4 @@
-# UPS Manager (v1.0.1)
+# UPS Manager
 
 ## О пакете
 
