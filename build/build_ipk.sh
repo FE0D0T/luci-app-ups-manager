@@ -5,7 +5,7 @@
 set -e
 
 PKG_NAME="luci-app-ups-manager"
-PKG_VERSION="1.0.3"
+PKG_VERSION="1.0.4"
 PKG_RELEASE="1"
 PKG_ARCH="all"
 
