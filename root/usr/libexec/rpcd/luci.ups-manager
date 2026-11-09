@@ -625,11 +625,36 @@ get_beeper() {
 	if [ "$mode" = "schedule" ]; then
 		now_state=$(/usr/bin/ups-manager-beeper schedule-now 2>/dev/null)
 	fi
-	echo -n "{\"state\":\"$state\",\"mode\":\"$mode\",\"schedule_on\":\"$on_at\",\"schedule_off\":\"$off_at\",\"now_state\":\"$now_state\"}"
+	local enabled=1
+	beeper_disabled && enabled=0
+	echo -n "{\"enabled\":$enabled,\"state\":\"$state\",\"mode\":\"$mode\",\"schedule_on\":\"$on_at\",\"schedule_off\":\"$off_at\",\"now_state\":\"$now_state\"}"
+}
+
+# Включить или отключить управление звуком целиком (ups_manager.beeper.enabled)
+set_beeper_enabled() {
+	case "$1" in
+		on|off) ;;
+		*) echo '{"success":false,"error":"Use on or off"}'; return 0 ;;
+	esac
+	local val=1
+	[ "$1" = "off" ] && val=0
+	uci -q set ${CONF}.beeper=beeper
+	uci -q set ${CONF}.beeper.enabled="$val"
+	uci -q commit ${CONF}
+	/etc/init.d/ups-manager reload >/dev/null 2>&1 &
+	echo '{"success":true}'
 }
 
 # Однократно: привести звук в состояние (on|off)
+beeper_disabled() {
+	[ "$(uci -q get ${CONF}.beeper.enabled || echo 1)" = "0" ]
+}
+
 set_beeper_once() {
+	if beeper_disabled; then
+		echo '{"success":false,"error":"Управление звуком отключено в настройках пакета"}'
+		return 0
+	fi
 	case "$1" in
 		on|off) ;;
 		*) echo '{"success":false,"error":"Use on or off"}'; return 0 ;;
@@ -644,6 +669,10 @@ set_beeper_once() {
 # Постоянный режим или расписание: mode=off|permanent_off|schedule
 set_beeper_mode() {
 	local mode="$1" on_at="$2" off_at="$3"
+	if beeper_disabled; then
+		echo '{"success":false,"error":"Управление звуком отключено в настройках пакета"}'
+		return 0
+	fi
 	case "$mode" in
 		off|permanent_off|schedule) ;;
 		*) echo '{"success":false,"error":"Unknown mode"}'; return 0 ;;
@@ -721,7 +750,8 @@ case "$1" in
 		echo '  "test_notification": {},'
 		echo '  "get_beeper": {},'
 		echo '  "set_beeper_once": {"state": "string"},'
-		echo '  "set_beeper_mode": {"mode": "string", "schedule_on": "string", "schedule_off": "string"}'
+		echo '  "set_beeper_mode": {"mode": "string", "schedule_on": "string", "schedule_off": "string"},'
+		echo '  "set_beeper_enabled": {"state": "string"}'
 		echo '}'
 		;;
 	call)
@@ -742,6 +772,7 @@ case "$1" in
 			test_notification) test_notification ;;
 			get_beeper) get_beeper ;;
 			set_beeper_once) ARGS_JSON=$(cat 2>/dev/null); set_beeper_once "$(jsonfield_arg state "$ARGS_JSON")" ;;
+			set_beeper_enabled) ARGS_JSON=$(cat 2>/dev/null); set_beeper_enabled "$(jsonfield_arg state "$ARGS_JSON")" ;;
 			set_beeper_mode) ARGS_JSON=$(cat 2>/dev/null); set_beeper_mode "$(jsonfield_arg mode "$ARGS_JSON")" "$(jsonfield_arg schedule_on "$ARGS_JSON")" "$(jsonfield_arg schedule_off "$ARGS_JSON")" ;;
 			*)
 				echo '{"error":"Unsupported method"}'

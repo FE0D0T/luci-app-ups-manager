@@ -52,7 +52,7 @@ jobs:
       - name: Build Standard OpenWrt / iStoreOS IPK Package
         run: |
           PKG_NAME="luci-app-ups-manager"
-          PKG_VERSION="1.0.4"
+          PKG_VERSION="1.0.5"
           PKG_RELEASE="1"
           PKG_ARCH="all"
           BUILD_DIR="/tmp/ipk-build"
