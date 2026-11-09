@@ -120,12 +120,14 @@ start_service() {
 
 		# Драйвер и upsd запускаются в фоне и отвязываются от init-скрипта,
 		# иначе procd/apk ждут их завершения и зависают.
-		if ! pgrep -x upsdrvctl >/dev/null 2>&1 && ! pgrep -x "$driver" >/dev/null 2>&1; then
-			( /usr/sbin/upsdrvctl start </dev/null >/dev/null 2>&1 1000>&- & )
-		fi
-		if ! pgrep -x upsd >/dev/null 2>&1; then
-			( /usr/sbin/upsd </dev/null >/dev/null 2>&1 1000>&- & )
-		fi
+		# Всегда перезапускаем драйвер и upsd при старте службы: после обновления пакета
+		# upsd держит мёртвый сокет старого драйвера и отдаёт "Data stale".
+		killall upsd 2>/dev/null || true
+		killall "$driver" 2>/dev/null || true
+		sleep 2
+		( /usr/sbin/upsdrvctl start </dev/null >/dev/null 2>&1 1000>&- & )
+		sleep 5
+		( /usr/sbin/upsd </dev/null >/dev/null 2>&1 1000>&- & )
 	fi
 
 	procd_open_instance "ups-manager-daemon"
