@@ -18,6 +18,13 @@ var callSetBeeperOnce = rpc.declare({
 	expect: { '': {} }
 });
 
+var callSetBeeperEnabled = rpc.declare({
+	object: 'luci.ups-manager',
+	method: 'set_beeper_enabled',
+	params: ['state'],
+	expect: { '': {} }
+});
+
 var callSetBeeperMode = rpc.declare({
 	object: 'luci.ups-manager',
 	method: 'set_beeper_mode',
@@ -111,7 +118,31 @@ return view.extend({
 			E('div', { 'class': 'cbi-map-descr' }, 'Управление звуковым сигналом ИБП. Статус обновляется автоматически.'),
 			E('div', { 'class': 'cbi-section', 'style': 'padding:1.25rem;' }, [
 				E('div', { 'style': 'font-size:0.85rem;color:var(--text-color-medium, #64748b);' }, 'Текущее состояние звука ИБП'),
-				self.stateEl
+				self.stateEl,
+				E('div', { 'style': 'margin-top:1rem;' }, [
+					E('label', { 'style': 'display:flex;align-items:center;gap:0.5rem;cursor:pointer;' }, [
+						E('input', {
+							'type': 'checkbox',
+							'checked': st.enabled !== 0,
+							'change': function(ev) {
+								var on = ev.target.checked;
+								callSetBeeperEnabled(on ? 'on' : 'off').then(function(res) {
+									if (res && res.success) {
+										ui.addNotification(null, E('p', {}, on ?
+											_('Управление звуком включено.') :
+											_('Управление звуком отключено: пакет больше не отправляет команды на ИБП.')), 'info');
+									} else {
+										ui.addNotification(null, E('p', {}, _('Не удалось изменить настройку.')), 'danger');
+										ev.target.checked = !on;
+									}
+								});
+							}
+						}),
+						E('span', {}, _('Управление звуком ИБП включено'))
+					]),
+					E('div', { 'style': 'font-size:0.8rem;color:var(--text-color-medium, #64748b);margin-top:0.35rem;' },
+						_('Выключите, если звук не работает на вашей модели ИБП и команды мешают работе. Тогда пакет ничего не отправляет на ИБП.'))
+				])
 			]),
 			E('div', { 'class': 'cbi-section', 'style': 'padding:1.25rem;' }, [
 				E('h3', { 'class': 'cbi-section-title' }, 'Режимы звука'),

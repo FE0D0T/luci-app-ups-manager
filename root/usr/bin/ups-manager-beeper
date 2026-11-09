@@ -90,9 +90,21 @@ schedule_state() {
 	fi
 }
 
+# Управление звуком можно отключить в настройках пакета (ups_manager.beeper.enabled=0).
+# Тогда скрипт ничего не отправляет на UPS: нужно, если звук не работает
+# на конкретной модели и команда beeper.toggle мешает.
+if [ "$(uci -q get ${CONF}.beeper.enabled || echo 1)" = "0" ] && [ "$1" != "status" ]; then
+	echo "disabled-by-user"
+	exit 0
+fi
+
 case "$1" in
 	status)
-		get_state
+		if [ "$(uci -q get ${CONF}.beeper.enabled || echo 1)" = "0" ]; then
+			echo "disabled-by-user"
+		else
+			get_state
+		fi
 		;;
 	schedule-now)
 		schedule_state

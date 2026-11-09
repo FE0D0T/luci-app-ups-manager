@@ -32,6 +32,7 @@
           "test_notification",
           "set_beeper_once",
           "set_beeper_mode",
+          "set_beeper_enabled",
           "clear_logs"
         ]
       },
