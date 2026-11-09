@@ -166,7 +166,13 @@ luci-app-ups-manager/
 
 Пошаговая инструкция с проверкой: **[INSTALL.md](INSTALL.md)**.
 
-Кратко, для OpenWrt 25.x (apk):
+Одной командой на роутере (по SSH, от root):
+
+```sh
+wget -qO- https://raw.githubusercontent.com/FE0D0T/luci-app-ups-manager/main/install.sh | sh
+```
+
+Или вручную, для OpenWrt 25.x (apk):
 
 ```sh
 apk update
