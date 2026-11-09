@@ -55,8 +55,15 @@ fi
 say "6/6 Запуск службы"
 ( /etc/init.d/ups-manager restart > /tmp/ups-manager-start.log 2>&1 < /dev/null & )
 rm -rf /tmp/luci-indexcache /tmp/luci-modulecache/
-sleep 25
-echo "    Статус UPS: $(upsc ups@127.0.0.1 ups.status 2>&1 || true)"
+STATUS=""
+i=0
+while [ "$i" -lt 30 ]; do
+	STATUS=$(upsc ups@127.0.0.1 ups.status 2>/dev/null || true)
+	[ "$STATUS" = "OL" ] || [ "$STATUS" = "OB" ] && break
+	sleep 2
+	i=$((i + 1))
+done
+echo "    Статус UPS: ${STATUS:-нет ответа} (ждали до 60 с)"
 echo
 echo "Готово. Откройте LuCI: Службы → UPS Manager (лучше в режиме инкогнито)."
 echo "Если статус не OL, подождите 30 секунд и выполните: upsc ups@127.0.0.1 ups.status"
