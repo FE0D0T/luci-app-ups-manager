@@ -87,7 +87,7 @@ log_event() {
 trap 'log_event INFO "Daemon stopping..."; rm -f /tmp/run/ups-manager.pid; exit 0' INT TERM
 
 echo $$ > /tmp/run/ups-manager.pid
-log_event INFO "UPS Manager daemon v1.0.5 started."
+log_event INFO "UPS Manager daemon v1.0.6 started."
 [ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "ops" "info" "Запуск демона UPS" "Фоновый сборщик данных UPS Manager запущен и работает."
 
 PREV_ONLINE=1
