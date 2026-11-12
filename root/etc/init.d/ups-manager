@@ -21,6 +21,15 @@ sync_nut_config() {
 	# Ensure /etc/nut directory exists
 	mkdir -p /etc/nut /var/run/nut /var/state/ups 2>/dev/null
 	chown -R nut:nut /var/run/nut /var/state/ups 2>/dev/null || true
+	
+	# Пакеты nut кладут в /etc/nut симлинки на /var/etc/nut/*, а /var (tmpfs) пуст
+	# после каждой загрузки. Без этого каталога запись конфигов ниже падает с
+	# "nonexistent directory", upsd не стартует и ИБП выглядит офлайн.
+	# Создаём каталог при каждом старте и восстанавливаем отсутствующие симлинки.
+	mkdir -p /var/etc/nut 2>/dev/null
+	for f in upsd.conf upsd.users upsmon.conf; do
+		[ -e "/etc/nut/$f" ] || [ -L "/etc/nut/$f" ] || ln -s "/var/etc/nut/$f" "/etc/nut/$f" 2>/dev/null
+	done
 
 	# Backup existing files if first time managing
 	for f in ups.conf upsd.conf upsd.users upsmon.conf; do
