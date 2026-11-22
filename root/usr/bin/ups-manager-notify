@@ -86,6 +86,14 @@ case "$CHANNEL" in
 		# ServerChan Turbo
 		curl -s -m 10 -d "title=$TITLE&desp=$CONTENT" "$URL" >/dev/null 2>&1
 		;;
+	telegram)
+		# Telegram Bot API: secret = bot token, URL = chat_id
+		[ -n "$SECRET" ] || exit 0
+		# CONTENT contains JSON-safe \n escapes; no quotes inside the text
+		PAYLOAD=$(printf '{"chat_id":"%s","text":"%s\\n%s"}' "$URL" "$TITLE" "$CONTENT")
+		RESP=$(curl -s -m 10 -H "Content-Type: application/json" -d "$PAYLOAD" "https://api.telegram.org/bot${SECRET}/sendMessage" 2>&1)
+		case "$RESP" in *'"ok":true'*) ;; *) logger -t ups-manager "Telegram send failed: $RESP" ;; esac
+		;;
 	*)
 		# Generic Webhook (POST JSON)
 		PAYLOAD=$(printf '{"title":"%s","message":"%s","event":"%s","host":"%s","timestamp":%d}' "$TITLE" "$EVENT_MSG" "$EVENT_TYPE" "$HOSTNAME" "$NOW")

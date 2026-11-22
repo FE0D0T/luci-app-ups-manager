@@ -29,14 +29,17 @@ return view.extend({
 		o.value('feishu', _('Пользовательский бот Feishu'));
 		o.value('bark', _('Bark (простые push-уведомления для iOS)'));
 		o.value('serverchan', _('Server酱·Turbo (уведомления WeChat)'));
+		o.value('telegram', _('Telegram (бот Bot API)'));
 		o.value('webhook', _('Пользовательский Webhook (универсальный JSON POST)'));
 		o.default = 'webhook';
 
-		o = s.option(form.Value, 'webhook_url', _('Адрес Webhook / URL отправки'));
+		o = s.option(form.Value, 'webhook_url', _('Адрес Webhook / URL отправки'),
+			_('Для Telegram укажите здесь chat_id вашего чата с ботом (число, например -1001234567890 или 123456789). Для остальных каналов — полный URL.'));
 		o.placeholder = 'https://oapi.dingtalk.com/robot/send?access_token=...';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'secret', _('Ключ подписи / токен доступа (необязательно)'));
+		o = s.option(form.Value, 'secret', _('Ключ подписи / токен доступа (необязательно)'),
+			_('Для Telegram — токен бота от @BotFather (вида «123456789:ABCdef...»). Поле защищено, значение скрыто.'));
 		o.password = true; // Mask secret for security
 
 		o = s.option(form.Value, 'repeat_interval', _('Интервал подавления повторных предупреждений (сек)'),
