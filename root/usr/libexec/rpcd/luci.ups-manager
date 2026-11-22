@@ -455,35 +455,45 @@ test_connection() {
 }
 
 # Get history data from ring buffer (parsed from history.csv)
+# Raw CSV fields:      t,v,vo,c,l,p,ob,ifreq,ofreq,temp,battv          (11)
+# Minute CSV fields:   ts,v,vo,c,l,p,ob,vmin,obc,ifreq,ofreq,temp,battv (13)
+# Old-format lines (7/9 fields) are handled: new fields default to 0.
+status_json_field() {
+	awk -F"\"$1\":" '{print $2}' "$STATUS_FILE" | awk -F'[,}]' '{print $1}' | tr -d ' ' 2>/dev/null
+}
+
 get_history() {
 	local csv_file="${RUNTIME_DIR}/history.csv"
 	[ "$1" = "minute" ] && csv_file="${RUNTIME_DIR}/history_1m.csv"
-	echo -n '{"points":['
-	local first=1
 
 	if [ -s "$csv_file" ]; then
-		while IFS=',' read -r t v vo c l p ob vmin obc; do
-			[ -z "$t" ] && continue
-			[ $first -eq 0 ] && echo -n ','
-			first=0
-			echo -n "{\"t\":${t:-0},\"v\":${v:-0},\"vo\":${vo:-0},\"c\":${c:-0},\"l\":${l:-0},\"p\":${p:-0},\"ob\":${ob:-0},\"vmin\":${vmin:-0},\"obc\":${obc:-0}}"
-		done < "$csv_file"
+		awk -F',' 'BEGIN{printf "{\"points\":["; f=0} NF>=7 {
+			if (f) printf ",";
+			f=1;
+			vmin=0; obc=0; ifq=0; ofq=0; tp=0; bv=0;
+			if (NF>=13) { vmin=$8+0; obc=$9+0; ifq=$10+0; ofq=$11+0; tp=$12+0; bv=$13+0 }
+			else if (NF>=11) { ifq=$8+0; ofq=$9+0; tp=$10+0; bv=$11+0 }
+			else if (NF>=9) { vmin=$8+0; obc=$9+0 }
+			printf "{\"t\":%d,\"v\":%s,\"vo\":%s,\"c\":%s,\"l\":%s,\"p\":%s,\"ob\":%s,\"vmin\":%s,\"obc\":%s,\"ifq\":%s,\"ofq\":%s,\"temp\":%s,\"bv\":%s}", $1+0, $2+0, $3+0, $4+0, $5+0, $6+0, $7+0, vmin, obc, ifq, ofq, tp, bv
+		} END{printf "]}"}' "$csv_file"
+		echo ""
+		return 0
 	fi
 
-	# Fallback if less than 2 points: seed baseline using current status
-	if [ $first -eq 1 ] && [ -f "$STATUS_FILE" ]; then
+	# Fallback if history is empty: seed baseline using current status
+	if [ -f "$STATUS_FILE" ]; then
 		local now=$(date +%s)
 		local prev=$((now - 30))
-		local cur_v=$(awk -F'"input_voltage":' '{print $2}' "$STATUS_FILE" | awk -F'[,}]' '{print $1}' | tr -d ' ' 2>/dev/null)
-		local cur_vo=$(awk -F'"output_voltage":' '{print $2}' "$STATUS_FILE" | awk -F'[,}]' '{print $1}' | tr -d ' ' 2>/dev/null)
-		local cur_c=$(awk -F'"battery_charge":' '{print $2}' "$STATUS_FILE" | awk -F'[,}]' '{print $1}' | tr -d ' ' 2>/dev/null)
-		local cur_l=$(awk -F'"load_percent":' '{print $2}' "$STATUS_FILE" | awk -F'[,}]' '{print $1}' | tr -d ' ' 2>/dev/null)
-		local cur_p=$(awk -F'"power":' '{print $2}' "$STATUS_FILE" | awk -F'[,}]' '{print $1}' | tr -d ' ' 2>/dev/null)
-		echo -n "{\"t\":$prev,\"v\":${cur_v:-220},\"vo\":${cur_vo:-220},\"c\":${cur_c:-100},\"l\":${cur_l:-10},\"p\":${cur_p:-50},\"ob\":0},"
-		echo -n "{\"t\":$now,\"v\":${cur_v:-220},\"vo\":${cur_vo:-220},\"c\":${cur_c:-100},\"l\":${cur_l:-10},\"p\":${cur_p:-50},\"ob\":0}"
+		local cur_v=$(status_json_field "input_voltage")
+		local cur_vo=$(status_json_field "output_voltage")
+		local cur_c=$(status_json_field "battery_charge")
+		local cur_l=$(status_json_field "load_percent")
+		local cur_p=$(status_json_field "power")
+		local cur_ifq=$(status_json_field "input_freq")
+		local cur_temp=$(status_json_field "temperature")
+		local cur_bv=$(status_json_field "battery_voltage")
+		echo "{\"points\":[{\"t\":$prev,\"v\":${cur_v:-220},\"vo\":${cur_vo:-220},\"c\":${cur_c:-100},\"l\":${cur_l:-10},\"p\":${cur_p:-50},\"ob\":0,\"vmin\":0,\"obc\":0,\"ifq\":${cur_ifq:-50},\"ofq\":${cur_ifq:-50},\"temp\":${cur_temp:-0},\"bv\":${cur_bv:-0}},{\"t\":$now,\"v\":${cur_v:-220},\"vo\":${cur_vo:-220},\"c\":${cur_c:-100},\"l\":${cur_l:-10},\"p\":${cur_p:-50},\"ob\":0,\"vmin\":0,\"obc\":0,\"ifq\":${cur_ifq:-50},\"ofq\":${cur_ifq:-50},\"temp\":${cur_temp:-0},\"bv\":${cur_bv:-0}}]}"
 	fi
-
-	echo -n ']}'
 }
 
 # Get energy report

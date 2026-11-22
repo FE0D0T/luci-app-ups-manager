@@ -55,11 +55,9 @@ quality_check() {
 	fi
 }
 
-# Правила статуса ИБП: флаг в ups.status = отклонение. Уровень из UCI quality_policy.
+# Правила статуса ИБП: флаг в ups.status = отклонение. Уровень передаётся из кэша UCI.
 status_rule() {
-	local key="$1" present="$2" title="$3" default_sev="$4"
-	local sev
-	sev=$(uci_get "${CONF}.quality.$key" "$default_sev")
+	local key="$1" present="$2" title="$3" sev="$4"
 	local var="SSTATE_$key"
 	eval "local cur=\${$var:-0}"
 	if [ "$present" = "1" ] && [ "$cur" = "0" ]; then
@@ -119,22 +117,42 @@ get_field() {
 	echo "$1" | awk -F': ' -v k="$2" '$1==k{print $2}'
 }
 
+LAST_UCI_TS=0
+UCI_READY=""
+
 while true; do
-	ENABLED=$(uci_get "${CONF}.global.enabled" "1")
+	NOW=$(date +%s)
+
+	# Конфигурация UCI перечитывается раз в 60 секунд, а не каждый цикл опроса
+	if [ -z "$UCI_READY" ] || [ $((NOW - LAST_UCI_TS)) -ge 60 ]; then
+		LAST_UCI_TS=$NOW
+		ENABLED=$(uci_get "${CONF}.global.enabled" "1")
+		POLL_INTERVAL=$(uci_get "${CONF}.global.poll_interval" "3")
+		[ "$POLL_INTERVAL" -ge 1 ] 2>/dev/null || POLL_INTERVAL=3
+		UPS_NAME=$(uci_get "${CONF}.ups.name" "ups")
+		UPS_HOST=$(uci_get "${CONF}.ups.remote_host" "127.0.0.1")
+		UPS_PORT=$(uci_get "${CONF}.ups.remote_port" "3493")
+		TARGET="${UPS_NAME}@${UPS_HOST}:${UPS_PORT}"
+		Q_IN_V_LOW=$(uci_get "${CONF}.quality.in_volt_low_trig" 190); Q_IN_V_LOW_R=$(uci_get "${CONF}.quality.in_volt_low_rec" 200)
+		Q_IN_V_HIGH=$(uci_get "${CONF}.quality.in_volt_high_trig" 250); Q_IN_V_HIGH_R=$(uci_get "${CONF}.quality.in_volt_high_rec" 245)
+		Q_IN_F_LOW=$(uci_get "${CONF}.quality.in_freq_low_trig" 47); Q_IN_F_LOW_R=$(uci_get "${CONF}.quality.in_freq_low_rec" 48)
+		Q_IN_F_HIGH=$(uci_get "${CONF}.quality.in_freq_high_trig" 53); Q_IN_F_HIGH_R=$(uci_get "${CONF}.quality.in_freq_high_rec" 52)
+		Q_LOAD_HIGH=$(uci_get "${CONF}.quality.load_high_trig" 80); Q_LOAD_HIGH_R=$(uci_get "${CONF}.quality.load_high_rec" 75)
+		Q_LOAD_CRIT=$(uci_get "${CONF}.quality.load_crit_trig" 95); Q_LOAD_CRIT_R=$(uci_get "${CONF}.quality.load_crit_rec" 90)
+		S_OVER=$(uci_get "${CONF}.quality.status_overload_sev" "critical")
+		S_BYPASS=$(uci_get "${CONF}.quality.status_bypass_sev" "warning")
+		S_RB=$(uci_get "${CONF}.quality.status_replace_batt_sev" "warning")
+		S_FAIL=$(uci_get "${CONF}.quality.status_selftest_fail_sev" "warning")
+		USER_NOM_POWER=$(uci_get "${CONF}.ups.nominal_power" "")
+		POWER_SCALE=$(uci_get "${CONF}.ups.power_scale" "1.0")
+		UCI_READY=1
+	fi
+
 	if [ "$ENABLED" != "1" ]; then
 		sleep 10
 		continue
 	fi
 
-	POLL_INTERVAL=$(uci_get "${CONF}.global.poll_interval" "3")
-	[ "$POLL_INTERVAL" -ge 1 ] 2>/dev/null || POLL_INTERVAL=3
-
-	UPS_NAME=$(uci_get "${CONF}.ups.name" "ups")
-	UPS_HOST=$(uci_get "${CONF}.ups.remote_host" "127.0.0.1")
-	UPS_PORT=$(uci_get "${CONF}.ups.remote_port" "3493")
-	TARGET="${UPS_NAME}@${UPS_HOST}:${UPS_PORT}"
-
-	NOW=$(date +%s)
 	RAW=$(upsc "$TARGET" 2>/dev/null)
 	UPSC_EXIT=$?
 
@@ -164,21 +182,29 @@ EOF
 		PREV_ONLINE=1
 	fi
 
-	STATUS_VAL=$(get_field "$RAW" "ups.status")
-	CHARGE=$(get_field "$RAW" "battery.charge")
-	RUNTIME=$(get_field "$RAW" "battery.runtime")
-	BATTERY_V=$(get_field "$RAW" "battery.voltage")
-	INPUT_V=$(get_field "$RAW" "input.voltage")
-	INPUT_FREQ=$(get_field "$RAW" "input.frequency")
-	OUTPUT_V=$(get_field "$RAW" "output.voltage")
-	OUTPUT_FREQ=$(get_field "$RAW" "output.frequency")
-	LOAD_PCT=$(get_field "$RAW" "ups.load")
-	TEMP=$(get_field "$RAW" "ups.temperature")
-	MODEL=$(get_field "$RAW" "device.model")
-	[ -z "$MODEL" ] && MODEL=$(get_field "$RAW" "ups.model")
-	MFR=$(get_field "$RAW" "device.mfr")
-	[ -z "$MFR" ] && MFR=$(get_field "$RAW" "ups.mfr")
-	REAL_POWER=$(get_field "$RAW" "ups.realpower")
+	# Единый проход awk по всем полям NUT (1 форк за цикл вместо 14)
+	STATUS_VAL=""; CHARGE=""; RUNTIME=""; BATTERY_V=""; INPUT_V=""; INPUT_FREQ=""
+	OUTPUT_V=""; OUTPUT_FREQ=""; LOAD_PCT=""; TEMP=""; MODEL=""; MFR=""
+	REAL_POWER=""; HW_NOM_POWER=""; HW_NOM_VA=""; HW_CURRENT=""
+	eval "$(printf '%s\n' "$RAW" | awk -F': ' '
+	{
+	if ($1=="ups.status") printf "STATUS_VAL=\"%s\"\n", $2
+	else if ($1=="battery.charge") printf "CHARGE=\"%s\"\n", $2
+	else if ($1=="battery.runtime") printf "RUNTIME=\"%s\"\n", $2
+	else if ($1=="battery.voltage") printf "BATTERY_V=\"%s\"\n", $2
+	else if ($1=="input.voltage") printf "INPUT_V=\"%s\"\n", $2
+	else if ($1=="input.frequency") printf "INPUT_FREQ=\"%s\"\n", $2
+	else if ($1=="output.voltage") printf "OUTPUT_V=\"%s\"\n", $2
+	else if ($1=="output.frequency") printf "OUTPUT_FREQ=\"%s\"\n", $2
+	else if ($1=="ups.load") printf "LOAD_PCT=\"%s\"\n", $2
+	else if ($1=="ups.temperature") printf "TEMP=\"%s\"\n", $2
+	else if (($1=="device.model" || $1=="ups.model") && MODEL=="") printf "MODEL=\"%s\"\n", $2
+	else if (($1=="device.mfr" || $1=="ups.mfr") && MFR=="") printf "MFR=\"%s\"\n", $2
+	else if ($1=="ups.realpower") printf "REAL_POWER=\"%s\"\n", $2
+	else if ($1=="ups.realpower.nominal") printf "HW_NOM_POWER=\"%s\"\n", $2
+	else if ($1=="ups.power.nominal") printf "HW_NOM_VA=\"%s\"\n", $2
+	else if ($1=="output.current") printf "HW_CURRENT=\"%s\"\n", $2
+	}' 2>/dev/null)"
 
 	IS_OL=0
 	IS_OB=0
@@ -188,12 +214,8 @@ EOF
 	case "$STATUS_VAL" in *LB*) IS_LB=1 ;; esac
 
 	# Universal Multi-Tier Power Calculation Engine
-	HW_NOM_POWER=$(get_field "$RAW" "ups.realpower.nominal")
-	HW_NOM_VA=$(get_field "$RAW" "ups.power.nominal")
-	HW_CURRENT=$(get_field "$RAW" "output.current")
-	HW_VOLTAGE=$(get_field "$RAW" "output.voltage")
-	USER_NOM_POWER=$(uci_get "${CONF}.ups.nominal_power" "")
-	POWER_SCALE=$(uci_get "${CONF}.ups.power_scale" "1.0")
+	HW_VOLTAGE="$OUTPUT_V"
+	# USER_NOM_POWER, POWER_SCALE — из кэша UCI (обновляется раз в 60 с)
 
 	POWER="$REAL_POWER"
 	POWER_ESTIMATED=0
@@ -346,22 +368,28 @@ EOF
 	fi
 
 	# Robust Ring-buffer append in tmpfs (CSV format)
-	# Fields: timestamp,input_v,output_v,charge,load,power,on_battery
+	# Fields: timestamp,input_v,output_v,charge,load,power,on_battery,input_freq,output_freq,temp,battery_v
 	# Качество электроэнергии: отклонения по порогам UCI (гистерезис по порогам восстановления)
-	quality_check in_volt_low "$INPUT_V" "$(uci_get ${CONF}.quality.in_volt_low_trig 190)" "$(uci_get ${CONF}.quality.in_volt_low_rec 200)" low 'Входное напряжение: низкое' warning
-	quality_check in_volt_high "$INPUT_V" "$(uci_get ${CONF}.quality.in_volt_high_trig 250)" "$(uci_get ${CONF}.quality.in_volt_high_rec 245)" high 'Входное напряжение: высокое' warning
-	quality_check in_freq_low "$INPUT_FREQ" "$(uci_get ${CONF}.quality.in_freq_low_trig 47)" "$(uci_get ${CONF}.quality.in_freq_low_rec 48)" low 'Входная частота: низкая' warning
-	quality_check in_freq_high "$INPUT_FREQ" "$(uci_get ${CONF}.quality.in_freq_high_trig 53)" "$(uci_get ${CONF}.quality.in_freq_high_rec 52)" high 'Входная частота: высокая' warning
-	quality_check load_high "$LOAD_PCT" "$(uci_get ${CONF}.quality.load_high_trig 80)" "$(uci_get ${CONF}.quality.load_high_rec 75)" high 'Нагрузка ИБП: высокая' warning
-	quality_check load_crit "$LOAD_PCT" "$(uci_get ${CONF}.quality.load_crit_trig 95)" "$(uci_get ${CONF}.quality.load_crit_rec 90)" high 'Нагрузка ИБП: критическая' critical
-	# Правила статуса ИБП (флаги NUT: OVER, BYPASS, RB, FAIL)
-	status_rule status_overload_sev $(echo "$STATUS_VAL" | grep -q OVER && echo 1 || echo 0) 'Перегрузка ИБП' critical
-	status_rule status_bypass_sev $(echo "$STATUS_VAL" | grep -q BYPASS && echo 1 || echo 0) 'ИБП перешёл в режим байпаса' warning
-	status_rule status_replace_batt_sev $(echo "$STATUS_VAL" | grep -q RB && echo 1 || echo 0) 'Требуется замена батареи' warning
-	status_rule status_selftest_fail_sev $(echo "$STATUS_VAL" | grep -q FAIL && echo 1 || echo 0) 'Ошибка самодиагностики ИБП' warning
+	# Пороги — из кэша UCI (обновляется раз в 60 с)
+	quality_check in_volt_low "$INPUT_V" "$Q_IN_V_LOW" "$Q_IN_V_LOW_R" low 'Входное напряжение: низкое' warning
+	quality_check in_volt_high "$INPUT_V" "$Q_IN_V_HIGH" "$Q_IN_V_HIGH_R" high 'Входное напряжение: высокое' warning
+	quality_check in_freq_low "$INPUT_FREQ" "$Q_IN_F_LOW" "$Q_IN_F_LOW_R" low 'Входная частота: низкая' warning
+	quality_check in_freq_high "$INPUT_FREQ" "$Q_IN_F_HIGH" "$Q_IN_F_HIGH_R" high 'Входная частота: высокая' warning
+	quality_check load_high "$LOAD_PCT" "$Q_LOAD_HIGH" "$Q_LOAD_HIGH_R" high 'Нагрузка ИБП: высокая' warning
+	quality_check load_crit "$LOAD_PCT" "$Q_LOAD_CRIT" "$Q_LOAD_CRIT_R" high 'Нагрузка ИБП: критическая' critical
+	# Правила статуса ИБП (флаги NUT: OVER, BYPASS, RB, FAIL) — определение без grep-форков
+	P_OVER=0; P_BYPASS=0; P_RB=0; P_FAIL=0
+	case "$STATUS_VAL" in *OVER*) P_OVER=1 ;; esac
+	case "$STATUS_VAL" in *BYPASS*) P_BYPASS=1 ;; esac
+	case "$STATUS_VAL" in *RB*) P_RB=1 ;; esac
+	case "$STATUS_VAL" in *FAIL*) P_FAIL=1 ;; esac
+	status_rule status_overload_sev "$P_OVER" 'Перегрузка ИБП' "$S_OVER"
+	status_rule status_bypass_sev "$P_BYPASS" 'ИБП перешёл в режим байпаса' "$S_BYPASS"
+	status_rule status_replace_batt_sev "$P_RB" 'Требуется замена батареи' "$S_RB"
+	status_rule status_selftest_fail_sev "$P_FAIL" 'Ошибка самодиагностики ИБП' "$S_FAIL"
 
 	HISTORY_CSV="${RUNTIME_DIR}/history.csv"
-	echo "$NOW,${INPUT_V:-0},${OUTPUT_V:-0},${CHARGE:-0},${LOAD_PCT:-0},${POWER:-0},$IS_OB" >> "$HISTORY_CSV"
+	echo "$NOW,${INPUT_V:-0},${OUTPUT_V:-0},${CHARGE:-0},${LOAD_PCT:-0},${POWER:-0},$IS_OB,${INPUT_FREQ:-0},${OUTPUT_FREQ:-0},${TEMP:-0},${BATTERY_V:-0}" >> "$HISTORY_CSV"
 
 	# Интегрирование энергии: P(W) x dt(s) / 3600 -> Wh. Пауза ограничена 30 с.
 	DT=$((NOW - LAST_E_TS)); [ "$DT" -gt 30 ] && DT=30; [ "$DT" -lt 0 ] && DT=0
@@ -383,21 +411,41 @@ EOF
 		echo "{\"today_kwh\":${TODAY_KWH:-0},\"month_kwh\":${MONTH_KWH:-0},\"today_wh\":${TODAY_WH:-0},\"month_wh\":${MONTH_WH:-0},\"peak_power\":${PEAK:-0},\"avg_power\":${AVG:-0},\"history\":[]}" > "$ENERGY_FILE.tmp" && mv "$ENERGY_FILE.tmp" "$ENERGY_FILE"
 	fi
 
-	# Минутные средние за сутки (1440 строк) в tmpfs: для диапазона 24 часа
+	# Минутные средние за 7 дней (10080 строк) в tmpfs: для диапазонов 6 ч, 24 ч и 7 дней
+	# Fields: ts,avg_v,avg_vo,avg_c,avg_l,avg_p,on_battery,min_v,outage_count,avg_ifreq,avg_ofreq,avg_temp,avg_battv
 	if [ $((NOW - LAST_MIN_TS)) -ge 60 ] && [ -s "$HISTORY_CSV" ]; then
 		LAST_MIN_TS=$NOW
 		HISTORY_1M="${RUNTIME_DIR}/history_1m.csv"
-		tail -n 40 "$HISTORY_CSV" | awk -F',' -v ts="$NOW" 'BEGIN{n=0; vmin=999999; obc=0} {if (NF>=7) {v+=$2; vo+=$3; c+=$4; l+=$5; p+=$6; if ($7==1) obc++; ob=($7>ob?$7:ob); if ($2>0 && $2<vmin) vmin=$2; n++}} END { if (n>0) { if (vmin==999999) vmin=0; printf "%d,%.1f,%.1f,%.1f,%.1f,%.1f,%d,%.1f,%d\n", ts, v/n, vo/n, c/n, l/n, p/n, ob, vmin, obc } }' >> "$HISTORY_1M"
-		if [ $(wc -l < "$HISTORY_1M" 2>/dev/null || echo 0) -gt 1500 ]; then
-			tail -n 1440 "$HISTORY_1M" > "${HISTORY_1M}.tmp" && mv "${HISTORY_1M}.tmp" "$HISTORY_1M"
+		tail -n 40 "$HISTORY_CSV" | awk -F',' -v ts="$NOW" 'BEGIN{n=0; vmin=999999; obc=0; nfq=0; nfo=0; ntp=0; nbv=0}
+		{if (NF>=7) {
+			v+=$2; vo+=$3; c+=$4; l+=$5; p+=$6;
+			if ($7==1) obc++;
+			ob=($7>ob?$7:ob);
+			if ($2>0 && $2<vmin) vmin=$2;
+			n++;
+			if (NF>=11) {
+				if ($8+0>0) {fq+=$8; nfq++}
+				if ($9+0>0) {fo+=$9; nfo++}
+				if ($10+0>0) {tp+=$10; ntp++}
+				if ($11+0>0) {bv+=$11; nbv++}
+			}
+		}}
+		END {
+			if (n>0) {
+				if (vmin==999999) vmin=0;
+				printf "%d,%.1f,%.1f,%.1f,%.1f,%.1f,%d,%.1f,%d,%.1f,%.1f,%.1f,%.1f\n", ts, v/n, vo/n, c/n, l/n, p/n, ob, vmin, obc, (nfq>0?fq/nfq:0), (nfo>0?fo/nfo:0), (ntp>0?tp/ntp:0), (nbv>0?bv/nbv:0)
+			}
+		}' >> "$HISTORY_1M"
+		if [ $(wc -l < "$HISTORY_1M" 2>/dev/null || echo 0) -gt 10150 ]; then
+			tail -n 10080 "$HISTORY_1M" > "${HISTORY_1M}.tmp" && mv "${HISTORY_1M}.tmp" "$HISTORY_1M"
 		fi
 	fi
 
-	# Periodic trim: keep last 1200 points (~1 hour at 3s)
+	# Periodic trim: keep last 3600 points (~1 hour at 1s poll, less at 3s)
 	if [ $((NOW - LAST_FLUSH_TS)) -ge 60 ]; then
 		LAST_FLUSH_TS=$NOW
-		if [ $(wc -l < "$HISTORY_CSV" 2>/dev/null || echo 0) -gt 1300 ]; then
-			tail -n 1200 "$HISTORY_CSV" > "${HISTORY_CSV}.tmp" && mv "${HISTORY_CSV}.tmp" "$HISTORY_CSV"
+		if [ $(wc -l < "$HISTORY_CSV" 2>/dev/null || echo 0) -gt 3700 ]; then
+			tail -n 3600 "$HISTORY_CSV" > "${HISTORY_CSV}.tmp" && mv "${HISTORY_CSV}.tmp" "$HISTORY_CSV"
 		fi
 	fi
 
