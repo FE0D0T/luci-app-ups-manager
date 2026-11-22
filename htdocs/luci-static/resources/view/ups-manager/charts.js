@@ -63,7 +63,10 @@ var CHARTS = [
 	}
 ];
 
-function pad2(n) { return ('0' + n).slice(-2); }
+	// Compact layout on narrow screens: short labels, one stat per line
+	var isMobile = function() { return window.innerWidth < 640; };
+
+	function pad2(n) { return ('0' + n).slice(-2); }
 
 function formatHM(ts) {
 	var d = new Date(ts * 1000);
@@ -162,7 +165,21 @@ return view.extend({
 		var container = E('div', { 'class': 'cbi-map', 'style': 'max-width:1240px;margin:0 auto;' }, [
 			E('h2', { 'class': 'cbi-map-title', 'style': 'font-size:1.25rem;font-weight:700;' }, _('График истории питания')),
 			E('div', { 'class': 'cbi-map-descr', 'style': 'color:var(--text-color-medium, #64748b);margin-bottom:1.25rem;' },
-				_('Запись входного и выходного напряжения, частоты, заряда, загрузки, мощности и температуры. Все данные хранятся только в оперативной памяти (tmpfs), SD-карта не изнашивается. Наведите курсор на график — покажутся точные значения в каждой точке.'))
+				_('Запись напряжения, частоты, заряда, загрузки, мощности и температуры. Данные хранятся только в оперативной памяти (tmpfs). Нажмите на график — покажутся точные значения.')),
+			E('style', {}, [
+				'.ups-chart-card{padding:0.7rem 0.85rem;}',
+				'#ups-stats-strip{gap:0.35rem 0.6rem;padding:0.5rem 0.7rem;margin-bottom:0.6rem;}',
+				'#ups-outage-bar{margin-bottom:0.6rem;font-size:0.8rem;padding:0.35rem 0.6rem;}',
+				'.ups-chart-stats div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+				'@media(max-width:640px){',
+				'.ups-chart-title{font-size:0.9rem;}',
+				'.ups-chart-stats{font-size:0.75rem;line-height:1.6;}',
+				'.ups-toolbar{padding:0.5rem 0.6rem;margin-bottom:0.6rem;gap:0.4rem;}',
+				'.ups-toolbar .cbi-button,.ups-toolbar button{padding:5px 10px;font-size:0.8rem;}',
+				'.ups-toolbar-label{font-size:0.78rem;}',
+				'.ups-strip-tile{min-width:72px;}',
+				'}'
+			].join(''))
 		]);
 
 		// Toolbar: range buttons + actions
@@ -175,9 +192,10 @@ return view.extend({
 		});
 
 		var toolbar = E('div', {
+			'class': 'ups-toolbar',
 			'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;'
 		}, [
-			E('div', { 'style': 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;' },
+			E('div', { 'class': 'ups-toolbar-label', 'style': 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;' },
 				[E('span', { 'style': 'font-weight:600;font-size:0.85rem;color:var(--text-color-high, #334155);' }, _('Диапазон времени:'))].concat(rangeButtons)),
 			E('div', { 'style': 'display:flex;gap:0.5rem;flex-wrap:wrap;' }, [
 				E('button', {
@@ -210,28 +228,26 @@ return view.extend({
 
 		dom.append(container, [toolbar, statsStrip, outageBar]);
 
-		// Chart cards
+		// Chart cards: title → per-series stats line (name in series color, values right after)
 		CHARTS.forEach(function(ch) {
-			var legend = ch.series.map(function(s) {
-				return E('span', { 'style': 'color:' + s.color + ';font-weight:bold;' }, '— ' + _(s.label) + '  ');
-			});
-			if (ch.extra) {
-				legend.push(E('span', { 'style': 'color:' + ch.extra.color + ';font-weight:bold;' }, '- - ' + _(ch.extra.label)));
-			}
+			var mobile = isMobile();
 
 			var card = E('div', {
-				'class': 'cbi-section',
+				'class': 'cbi-section ups-chart-card',
 				'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);'
 			}, [
-				E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.5rem;' }, [
-					E('span', { 'style': 'font-weight:700;font-size:0.95rem;color:var(--text-color-high, #1e293b);' }, [ch.icon + ' ', _(ch.title)]),
-					E('span', { 'style': 'font-size:0.8rem;' }, legend)
+				E('div', { 'style': 'margin-bottom:0.35rem;' }, [
+					E('span', { 'class': 'ups-chart-title', 'style': 'font-weight:700;font-size:0.95rem;color:var(--text-color-high, #1e293b);' },
+						[ch.icon + ' ', _(ch.title)])
 				]),
 				E('div', {
 					'id': 'chart-stats-' + ch.id,
-					'style': 'font-size:0.78rem;color:var(--text-color-medium, #64748b);margin-bottom:0.6rem;'
+					'class': 'ups-chart-stats',
+					'style': 'font-size:0.8rem;color:var(--text-color-medium, #64748b);margin-bottom:0.6rem;line-height:1.7;'
 				}),
-				E('div', { 'id': 'chart-' + ch.id, 'style': 'position:relative;width:100%;height:260px;' })
+				E('div', { 'style': 'position:relative;width:' + (mobile ? '100%' : 'calc(100% + 2.5rem)') + ';margin-left:' + (mobile ? '0' : '-1.25rem') + ';height:' + (mobile ? 230 : 260) + 'px;' }, [
+					E('div', { 'id': 'chart-' + ch.id, 'style': 'position:absolute;inset:0;' })
+				])
 			]);
 
 			dom.append(container, [card]);
@@ -242,10 +258,19 @@ return view.extend({
 			var box = document.getElementById('chart-' + ch.id);
 			if (!box) return;
 			var tip = E('div', {
-				'style': 'position:absolute;top:8px;right:8px;display:none;background:rgba(15,23,42,0.92);color:#f8fafc;border-radius:8px;padding:0.5rem 0.7rem;font-size:0.75rem;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:none;white-space:nowrap;'
+				'style': 'position:absolute;top:8px;left:8px;right:auto;display:none;background:rgba(15,23,42,0.92);color:#f8fafc;border-radius:8px;padding:0.5rem 0.7rem;font-size:' + (isMobile() ? 0.85 : 0.75) + 'rem;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:none;white-space:nowrap;'
 			});
 			self.chartTip[ch.id] = tip;
 			box.addEventListener('mousemove', function(e) { self.handleHover(ch.id, e, box); });
+			box.addEventListener('touchstart', function(e) { self.handleHover(ch.id, e.touches[0], box); }, { passive: true });
+			box.addEventListener('touchmove', function(e) { self.handleHover(ch.id, e.touches[0], box); }, { passive: true });
+			box.addEventListener('touchend', function() {
+				tip.style.display = 'none';
+				var cr = document.getElementById('cross-' + ch.id);
+				if (cr) cr.style.display = 'none';
+				var dots = box.querySelectorAll('circle[id^="dot-' + ch.id + '-"]');
+				for (var i = 0; i < dots.length; i++) dots[i].style.display = 'none';
+			});
 			box.addEventListener('mouseleave', function() {
 				tip.style.display = 'none';
 				var cr = document.getElementById('cross-' + ch.id);
@@ -355,7 +380,7 @@ return view.extend({
 	buildStripHTML: function(st) {
 		st = st || {};
 		function tile(label, value, color) {
-			return '<div style="min-width:90px;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-color-medium,#94a3b8);text-transform:uppercase;letter-spacing:0.04em;">' + _(label) + '</div>' +
+			return '<div class="ups-strip-tile" style="min-width:90px;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-color-medium,#94a3b8);text-transform:uppercase;letter-spacing:0.04em;">' + _(label) + '</div>' +
 				'<div style="font-size:1.05rem;font-weight:800;color:' + color + ';font-variant-numeric:tabular-nums;">' + value + '</div></div>';
 		}
 		var modeBadge;
@@ -395,16 +420,16 @@ return view.extend({
 	renderChartStats: function(ch, points) {
 		var all = ch.series.slice();
 		if (ch.extra) all.push(ch.extra);
-		var parts = [];
+		var lines = [];
 		for (var i = 0; i < all.length; i++) {
 			var sr = all[i];
 			var dropZero = (sr.key === 'vmin' || sr.key === 'ifq' || sr.key === 'ofq' || sr.key === 'temp');
 			var st = statsFor(points, sr.key, dropZero);
 			if (!st) continue;
-			parts.push('<span style="color:' + sr.color + ';font-weight:700;">' + _(sr.label) + '</span> ' +
-				_('мин') + ' <b>' + fmtNum(st.min, 1) + '</b> · ' + _('сред') + ' <b>' + fmtNum(st.avg, 1) + '</b> · ' + _('макс') + ' <b>' + fmtNum(st.max, 1) + '</b>');
+			lines.push('<div><span style="color:' + sr.color + ';font-weight:700;">' + _(sr.label) + '</span> ' +
+				_('мин') + ' <b>' + fmtNum(st.min, 1) + '</b> · ' + _('сред') + ' <b>' + fmtNum(st.avg, 1) + '</b> · ' + _('макс') + ' <b>' + fmtNum(st.max, 1) + '</b></div>');
 		}
-		return parts.join('<span style="color:#cbd5e1;">&nbsp;|&nbsp;</span>');
+		return lines.join('');
 	},
 
 	drawAll: function() {
@@ -428,7 +453,7 @@ return view.extend({
 				}
 			}
 			if (!avail) {
-				el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.85rem;">' +
+				el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:0.5rem;color:#94a3b8;font-size:' + (isMobile() ? 0.8 : 0.85) + 'rem;">' +
 					_('Драйвер NUT этого ИБП не сообщает эти данные — график недоступен') + '</div>';
 				if (statsEl) statsEl.innerHTML = '';
 				return;
@@ -444,10 +469,12 @@ return view.extend({
 
 	drawChart: function(ch, points, el) {
 		var vbW = 900, vbH = 260;
-		var pad = { top: 14, right: 18, bottom: 30, left: 48 };
+		var mobile = isMobile();
+		if (mobile) { vbW = 560; vbH = 230; }
+		var pad = { top: 14, right: 8, bottom: 30, left: 40 };
+		if (mobile) { pad = { top: 12, right: 8, bottom: 26, left: 40 }; }
 		var chartW = vbW - pad.left - pad.right;
 		var chartH = vbH - pad.top - pad.bottom;
-
 		var tMin = points[0].t;
 		var tMax = points[points.length - 1].t;
 		if (tMax <= tMin) tMax = tMin + 10;
@@ -487,25 +514,31 @@ return view.extend({
 			return pad.top + chartH - ((clamped - sc.lo) / (sc.hi - sc.lo)) * chartH;
 		};
 
+		var fs = mobile ? 16 : 11;
 		var svg = ['<svg viewBox="0 0 ' + vbW + ' ' + vbH + '" style="width:100%;height:100%;font-family:inherit;" preserveAspectRatio="xMidYMid meet">'];
+
+		// On narrow screens: keep at most ~4 time labels so they never overlap
+		var maxLabels = mobile ? 4 : 8;
 
 		// Horizontal grid + Y labels
 		for (var g = 0; g < sc.ticks.length; g++) {
 			var yv = getY(sc.ticks[g]);
 			svg.push('<line x1="' + pad.left + '" y1="' + yv.toFixed(1) + '" x2="' + (pad.left + chartW) + '" y2="' + yv.toFixed(1) + '" stroke="#e2e8f0" stroke-width="1" />');
 			var lbl = sc.step < 1 ? sc.ticks[g].toFixed(1) : String(Math.round(sc.ticks[g]));
-			svg.push('<text x="' + (pad.left - 8) + '" y="' + (yv + 4).toFixed(1) + '" font-size="11" text-anchor="end" fill="#94a3b8">' + lbl + '</text>');
+			svg.push('<text x="' + (pad.left - 6) + '" y="' + (yv + 4).toFixed(1) + '" font-size="' + fs + '" text-anchor="end" fill="#94a3b8">' + lbl + '</text>');
 		}
 
 		// Vertical grid + time labels (aligned to local-time boundaries)
 		var tstep = pickTimeStep(tMax - tMin);
+		if (mobile && tstep < 1800) tstep = 1800;
+		while ((tMax - tMin) / tstep > maxLabels) tstep *= 2;
 		var tz = new Date().getTimezoneOffset() * 60;
 		var t0 = Math.ceil((tMin + tz) / tstep) * tstep - tz;
 		for (var tt = t0; tt <= tMax; tt += tstep) {
 			var x = getX(tt);
 			svg.push('<line x1="' + x.toFixed(1) + '" y1="' + pad.top + '" x2="' + x.toFixed(1) + '" y2="' + (pad.top + chartH) + '" stroke="#f1f5f9" stroke-width="1" />');
 			var tl = tstep >= 86400 ? formatDay(tt) : formatHM(tt);
-			svg.push('<text x="' + x.toFixed(1) + '" y="' + (pad.top + chartH + 16) + '" font-size="11" fill="#94a3b8" text-anchor="middle">' + tl + '</text>');
+			svg.push('<text x="' + x.toFixed(1) + '" y="' + (pad.top + chartH + 16) + '" font-size="' + fs + '" fill="#94a3b8" text-anchor="middle">' + tl + '</text>');
 		}
 
 		// Outage zones (red shaded bands)
