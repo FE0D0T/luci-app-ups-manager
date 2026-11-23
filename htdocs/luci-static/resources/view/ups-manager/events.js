@@ -16,19 +16,77 @@ var callClearOpsEvents = rpc.declare({
 	expect: { '': {} }
 });
 
+var callGetQualityEvents = rpc.declare({
+	object: 'luci.ups-manager',
+	method: 'get_quality_events',
+	expect: { '': {} }
+});
+
+var callClearQualityEvents = rpc.declare({
+	object: 'luci.ups-manager',
+	method: 'clear_quality_events',
+	expect: { '': {} }
+});
+
+var PAGE_SIZE = 20;
+
 return view.extend({
 	filterType: 'all',
+	pageIdx: 0,
 	events: [],
 
 	load: function() {
-		return callGetOpsEvents().catch(function() {
-			return { total: 0, events: [] };
+		return Promise.all([
+			callGetOpsEvents().catch(function() { return { events: [] }; }),
+			callGetQualityEvents().catch(function() { return { events: [] }; })
+		]);
+	},
+
+	mergeEvents: function(data) {
+		var merged = [];
+		var ops = (data[0] && data[0].events) ? data[0].events : [];
+		var qual = (data[1] && data[1].events) ? data[1].events : [];
+
+		ops.forEach(function(ev) {
+			merged.push({
+				id: ev.id,
+				time: ev.time || '',
+				category: ev.category || 'ops',
+				level: ev.level || 'info',
+				title: ev.title || '',
+				desc: ev.desc || '',
+				value: '',
+				status: ''
+			});
 		});
+
+		qual.forEach(function(ev) {
+			merged.push({
+				id: ev.id,
+				time: ev.time || '',
+				category: 'quality',
+				level: ev.severity || 'warning',
+				title: ev.title || _('Колебания показателей электроэнергии'),
+				desc: ev.detail || _('Показатели сети вышли за безопасные пределы. Событие записано в журнал анализа качества электроэнергии.'),
+				value: ev.value || '',
+				status: ev.status || '',
+				duration: ev.duration || ''
+			});
+		});
+
+		// Единый формат времени ГГГГ/ММ/ДД ЧЧ:ММ:СС → лексикографическая сортировка
+		merged.sort(function(a, b) {
+			if (a.time === b.time) return 0;
+			return a.time > b.time ? -1 : 1;
+		});
+
+		return merged;
 	},
 
 	render: function(data) {
 		var self = this;
-		this.events = (data && data.events) ? data.events : [];
+		this.events = this.mergeEvents(data);
+		this.pageIdx = 0;
 
 		var container = E('div', { 'class': 'cbi-map ups-events-view' });
 
@@ -62,18 +120,25 @@ return view.extend({
 			'.event-row-card.border-red { border-left: 4px solid var(--proton-danger, #ef4444); }',
 			'.event-row-card.border-green { border-left: 4px solid var(--proton-success, #10b981); }',
 			'.event-row-card.border-blue { border-left: 4px solid var(--proton-accent, #3b82f6); }',
+			'.event-row-card.border-purple { border-left: 4px solid var(--ups-series-power, #8b5cf6); }',
 			'.event-row-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem; }',
 			'.event-row-header-left { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }',
 			'.event-tag-pill { display: inline-flex; align-items: center; gap: 0.25rem; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }',
 			'.event-tag-red { background: rgba(239,68,68,0.22); color: var(--proton-danger, #dc2626); }',
 			'.event-tag-green { background: rgba(16,185,129,0.22); color: var(--proton-success, #059669); }',
+			'.event-tag-purple { background: rgba(139,92,246,0.22); color: var(--ups-series-power, #7c3aed); }',
 			'.event-tag-blue { background: var(--proton-bg-secondary, var(--background-color-low, #f1f5f9)); color: var(--text-color-high, #475569); }',
 			'.dark-mode .event-tag-blue { background: var(--proton-bg-hover, #334155); color: var(--text-color-medium, #94a3b8); }',
+			'.event-tag-gray { background: var(--proton-bg-secondary, var(--background-color-low, #f1f5f9)); color: var(--text-color-medium, #64748b); }',
+			'.dark-mode .event-tag-gray { background: var(--proton-bg-hover, #334155); color: var(--text-color-medium, #94a3b8); }',
 			'.event-row-title { font-size: 0.92rem; font-weight: 700; color: var(--text-color-high, #0f172a); }',
 			'.dark-mode .event-row-title { color: var(--text-color-highest, #f8fafc); }',
 			'.event-row-time { font-family: monospace; font-size: 0.78rem; color: var(--text-color-medium, #94a3b8); }',
 			'.event-row-desc { font-size: 0.83rem; color: var(--text-color-medium, #64748b); margin: 0; line-height: 1.55; }',
-			'.dark-mode .event-row-desc { color: var(--text-color-medium, #94a3b8); }'
+			'.dark-mode .event-row-desc { color: var(--text-color-medium, #94a3b8); }',
+			'.event-pager { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--text-color-medium, #64748b); margin-top: 1.25rem; border-top: 1px solid var(--proton-border-light, #f1f5f9); padding-top: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }',
+			'.dark-mode .event-pager { border-top-color: var(--proton-border, var(--text-color-high, #334155)); }',
+			'.event-pager .event-btn-light[disabled] { opacity: 0.45; cursor: default; }'
 		]);
 
 		container.appendChild(styleNode);
@@ -82,21 +147,23 @@ return view.extend({
 
 		// Top Action Bar
 		var titleNode = E('div', { 'class': 'event-title-wrap' }, [
-			E('h2', { 'class': 'event-main-title' }, ['⏱️ ', _('История событий ИБП и журнал обслуживания')]),
-			E('span', { 'class': 'event-count-badge', 'id': 'events-count-label' }, (this.events.length) + _(' записей'))
+			E('h2', { 'class': 'event-main-title' }, ['⏱️ ', _('Журнал событий ИБП')]),
+			E('span', { 'class': 'event-count-badge', 'id': 'events-top-count' }, this.events.length + _(' записей'))
 		]);
 
 		var filterSelect = E('select', {
 			'class': 'event-filter-select',
 			'change': function(ev) {
 				self.filterType = ev.target.value;
+				self.pageIdx = 0;
 				self.updateEventList();
 			}
 		}, [
-			E('option', { 'value': 'all' }, _('🔍 Все типы событий')),
+			E('option', { 'value': 'all' }, _('🔍 Все события')),
 			E('option', { 'value': 'power' }, _('⚡ События питания')),
-			E('option', { 'value': 'comm' }, _('🔌 Порт/протокол')),
-			E('option', { 'value': 'ops' }, _('⚙️ Обслуживание системы'))
+			E('option', { 'value': 'quality' }, _('〰️ Отклонения качества сети')),
+			E('option', { 'value': 'comm' }, _('🔌 Связь / порт')),
+			E('option', { 'value': 'ops' }, _('⚙️ Обслуживание'))
 		]);
 
 		var refreshBtn = E('button', {
@@ -106,12 +173,23 @@ return view.extend({
 			}
 		}, ['🔄 ', _('Обновить')]);
 
+		var exportBtn = E('button', {
+			'class': 'event-btn-light',
+			'click': function() {
+				self.exportCSV();
+			}
+		}, ['📄 ', _('Экспорт CSV')]);
+
 		var clearBtn = E('button', {
 			'class': 'event-btn-light',
 			'click': function() {
-				if (!confirm(_('Очистить все события и историю обслуживания ИБП?'))) return;
-				callClearOpsEvents().then(function() {
+				if (!confirm(_('Очистить весь журнал: события обслуживания и отклонения качества сети?'))) return;
+				Promise.all([
+					callClearOpsEvents().catch(function() { return {}; }),
+					callClearQualityEvents().catch(function() { return {}; })
+				]).then(function() {
 					self.events = [];
+					self.pageIdx = 0;
 					self.updateEventList();
 					ui.addNotification(null, E('p', {}, _('Журнал успешно очищен.')), 'info');
 				});
@@ -137,6 +215,7 @@ return view.extend({
 			filterSelect,
 			toggleNoticeBtn,
 			refreshBtn,
+			exportBtn,
 			clearBtn
 		]);
 
@@ -190,16 +269,63 @@ return view.extend({
 		var listContainer = E('div', { 'id': 'events-timeline-container' }, this.renderEventItems());
 		panelCard.appendChild(listContainer);
 
+		// Pagination footer
+		var pager = E('div', { 'class': 'event-pager', 'id': 'events-pager' }, this.renderPagerNodes());
+		panelCard.appendChild(pager);
+
 		container.appendChild(panelCard);
 		return container;
 	},
 
-	renderEventItems: function() {
+	getFiltered: function() {
 		var self = this;
-		var filtered = this.events.filter(function(ev) {
+		return this.events.filter(function(ev) {
 			if (self.filterType === 'all') return true;
 			return ev.category === self.filterType;
 		});
+	},
+
+	renderPagerNodes: function() {
+		var self = this;
+		var filtered = this.getFiltered();
+		var pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+		if (this.pageIdx >= pages) this.pageIdx = pages - 1;
+
+		var prevBtn = E('button', {
+			'class': 'event-btn-light',
+			'disabled': this.pageIdx <= 0,
+			'click': function() {
+				if (self.pageIdx > 0) {
+					self.pageIdx--;
+					self.updateEventList();
+				}
+			}
+		}, ['← ', _('Назад')]);
+
+		var nextBtn = E('button', {
+			'class': 'event-btn-light',
+			'disabled': this.pageIdx >= pages - 1,
+			'click': function() {
+				if (self.pageIdx < pages - 1) {
+					self.pageIdx++;
+					self.updateEventList();
+				}
+			}
+		}, [_('Вперёд'), ' →']);
+
+		return [
+			E('span', { 'id': 'events-count-label' }, filtered.length + _(' записей · стр. ') + (this.pageIdx + 1) + '/' + pages),
+			E('div', { 'style': 'display:flex;align-items:center;gap:0.5rem;' }, [
+				E('span', {}, _('по ' + PAGE_SIZE + ' на странице')),
+				prevBtn,
+				nextBtn
+			])
+		];
+	},
+
+	renderEventItems: function() {
+		var self = this;
+		var filtered = this.getFiltered();
 
 		if (filtered.length === 0) {
 			return [
@@ -207,30 +333,44 @@ return view.extend({
 					E('div', { 'style': 'font-size:1.8rem;margin-bottom:0.6rem;' }, '🟢'),
 					E('div', { 'style': 'font-size:0.95rem;font-weight:700;color:var(--text-color-medium, #64748b);margin-bottom:0.35rem;' }, _('Реальных записей о событиях пока нет')),
 					E('div', { 'style': 'font-size:0.8rem;color:var(--text-color-medium, #94a3b8);max-width:480px;margin:0 auto;line-height:1.6;' },
-						_('Система работает в штатном режиме мониторинга, имитационные данные полностью удалены. При отключении и восстановлении сети, обрыве и восстановлении связи USB, низком заряде батареи или изменении настроек реальные события сразу появятся здесь.'))
+						_('Система работает в штатном режиме мониторинга. При отключении и восстановлении сети, обрыве и восстановлении связи USB, отклонениях качества сети, низком заряде батареи или изменении настроек реальные события сразу появятся здесь.'))
 				])
 			];
 		}
 
+		var start = this.pageIdx * PAGE_SIZE;
+		var pageItems = filtered.slice(start, start + PAGE_SIZE);
+
 		var items = [];
-		filtered.forEach(function(ev) {
+		pageItems.forEach(function(ev) {
 			var cardClass = 'event-row-card';
 			var tagNode = null;
+			var extraNode = [];
 
 			if (ev.category === 'comm') {
 				cardClass += ' border-red';
-				tagNode = E('span', { 'class': 'event-tag-pill event-tag-red' }, ['🔴 ⚡ ', _('Порт/протокол')]);
+				tagNode = E('span', { 'class': 'event-tag-pill event-tag-red' }, ['🔴 ', _('Связь / порт')]);
+			} else if (ev.category === 'quality') {
+				cardClass += (ev.level === 'critical' ? ' border-red' : ' border-purple');
+				tagNode = E('span', { 'class': 'event-tag-pill event-tag-purple' }, ['〰️ ', _('Качество сети')]);
+				if (ev.value) extraNode.push(E('span', { 'class': 'event-tag-pill event-tag-gray' }, ev.value));
+				extraNode.push(E('span', {
+					'class': 'event-tag-pill ' + (ev.status === 'recovered' ? 'event-tag-green' : 'event-tag-red'),
+					'title': ev.status === 'recovered' ? _('Восстановлено (подробности)') : _('Активно (подробности)'),
+					'click': function() { self.showEventModal(ev); },
+					'style': 'cursor:pointer;'
+				}, ev.status === 'recovered' ? ['🟢 ', _('Восстановлено')] : ['🔴 ', _('Активно')]));
 			} else if (ev.category === 'power') {
-				if (ev.level === 'warn') {
+				if (ev.level === 'warn' || ev.level === 'crit') {
 					cardClass += ' border-red';
-					tagNode = E('span', { 'class': 'event-tag-pill event-tag-red' }, ['🔴 ⚡ ', _('События питания')]);
+					tagNode = E('span', { 'class': 'event-tag-pill event-tag-red' }, ['🔴 ', _('События питания')]);
 				} else {
 					cardClass += ' border-green';
-					tagNode = E('span', { 'class': 'event-tag-pill event-tag-green' }, ['🟢 ⚡ ', _('События питания')]);
+					tagNode = E('span', { 'class': 'event-tag-pill event-tag-green' }, ['🟢 ', _('События питания')]);
 				}
 			} else {
 				cardClass += ' border-blue';
-				tagNode = E('span', { 'class': 'event-tag-pill event-tag-blue' }, ['ℹ️ ', _('Обслуживание системы')]);
+				tagNode = E('span', { 'class': 'event-tag-pill event-tag-blue' }, ['ℹ️ ', _('Обслуживание')]);
 			}
 
 			var itemNode = E('div', { 'class': cardClass }, [
@@ -238,7 +378,7 @@ return view.extend({
 					E('div', { 'class': 'event-row-header-left' }, [
 						tagNode,
 						E('span', { 'class': 'event-row-title' }, ev.title)
-					]),
+					].concat(extraNode)),
 					E('span', { 'class': 'event-row-time' }, ev.time || '')
 				]),
 				E('p', { 'class': 'event-row-desc' }, ev.desc)
@@ -250,23 +390,90 @@ return view.extend({
 		return items;
 	},
 
+	showEventModal: function(ev) {
+		ui.showModal(_('Подробности события отклонения качества электроэнергии'), [
+			E('table', { 'class': 'table', 'style': 'margin-top:0.5rem;' }, [
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;width:35%;' }, _('Название события / ID')),
+					E('td', {}, (ev.title || '') + ' (' + (ev.id || '') + ')')
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Уровень предупреждения')),
+					E('td', {}, ev.level === 'critical' ? _('Критическое предупреждение') : _('Информационное предупреждение'))
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Текущее состояние')),
+					E('td', {}, ev.status === 'recovered' ? _('🟢 Восстановлено') : _('🔴 Отклонение продолжается'))
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Значение при срабатывании')),
+					E('td', { 'style': 'font-family:monospace;font-weight:bold;' }, ev.value || '--')
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Время срабатывания')),
+					E('td', {}, ev.time || '--')
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Длительность отклонения')),
+					E('td', {}, ev.duration || _('Кратковременное, устранено'))
+				]),
+				E('tr', {}, [
+					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Пояснение')),
+					E('td', {}, ev.desc || _('Показатели сети вышли за безопасные пределы.'))
+				])
+			]),
+			E('div', { 'class': 'right', 'style': 'margin-top:1.5rem;' }, [
+				E('button', {
+					'class': 'btn cbi-button cbi-button-action',
+					'click': ui.hideModal
+				}, _('Закрыть'))
+			])
+		]);
+	},
+
 	updateEventList: function() {
 		var container = document.getElementById('events-timeline-container');
 		if (container) {
 			dom.content(container, this.renderEventItems());
 		}
-		var label = document.getElementById('events-count-label');
-		if (label) {
-			label.innerText = this.events.length + _(' записей');
+		var pager = document.getElementById('events-pager');
+		if (pager) {
+			dom.content(pager, this.renderPagerNodes());
 		}
+		var topLabel = document.getElementById('events-top-count');
+		if (topLabel) {
+			topLabel.innerText = this.events.length + _(' записей');
+		}
+	},
+
+	exportCSV: function() {
+		var filtered = this.getFiltered();
+		function esc(v) {
+			return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+		}
+		var lines = ['time,category,level,title,desc,value,status'];
+		filtered.forEach(function(ev) {
+			lines.push([esc(ev.time), esc(ev.category), esc(ev.level), esc(ev.title), esc(ev.desc), esc(ev.value), esc(ev.status)].join(','));
+		});
+		var content = '\uFEFF' + lines.join('\n');
+		var blob = new Blob([content], { type: 'text/plain' });
+		var url = URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.href = url;
+		a.download = 'ups_manager_events_' + Math.floor(Date.now() / 1000) + '.csv';
+		a.click();
+		URL.revokeObjectURL(url);
 	},
 
 	refresh: function() {
 		var self = this;
-		return callGetOpsEvents().then(function(res) {
-			self.events = (res && res.events) ? res.events : [];
+		return Promise.all([
+			callGetOpsEvents().catch(function() { return { events: [] }; }),
+			callGetQualityEvents().catch(function() { return { events: [] }; })
+		]).then(function(data) {
+			self.events = self.mergeEvents(data);
 			self.updateEventList();
-			ui.addNotification(null, E('p', {}, _('Журнал событий и обслуживания обновлён')), 'info');
+			ui.addNotification(null, E('p', {}, _('Журнал событий обновлён')), 'info');
 		});
 	}
 });

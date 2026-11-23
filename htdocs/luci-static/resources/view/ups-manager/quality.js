@@ -23,12 +23,6 @@ var callGetQualityEvents = rpc.declare({
 	expect: { '': {} }
 });
 
-var callClearQualityEvents = rpc.declare({
-	object: 'luci.ups-manager',
-	method: 'clear_quality_events',
-	expect: { '': {} }
-});
-
 var DEFAULT_RULES = {
 	hide_unsupported: '0',
 	status_overload_sev: 'critical',
@@ -65,7 +59,6 @@ var DEFAULT_RULES = {
 };
 
 return view.extend({
-	activeFilter: 'all',
 	rulesData: {},
 	statusData: {},
 	eventsList: [],
@@ -146,24 +139,7 @@ return view.extend({
 			'.dark-mode .pq-input-group label { color: var(--text-color-medium, #94a3b8); }',
 			'.pq-input-group input, .pq-input-group select { width: 100%; border: 1px solid var(--proton-border, #cbd5e1); border-radius: 6px; padding: 0.35rem 0.5rem; font-size: 0.85rem; background: var(--proton-bg-secondary, var(--background-color-high, #ffffff)); color: var(--text-color-high, #0f172a); box-sizing: border-box; }',
 			'.dark-mode .pq-input-group input, .dark-mode .pq-input-group select { background: var(--proton-card-solid, var(--background-color-high, #0f172a)); color: var(--proton-fg, #ffffff); border-color: var(--proton-border, var(--text-color-medium, #475569)); }',
-			'.pq-rule-unsupported-note { font-size: 0.72rem; color: var(--text-color-medium, #94a3b8); margin-top: 0.6rem; display: flex; align-items: center; gap: 0.35rem; }',
-			'.pq-event-item { background: var(--proton-card-solid, var(--background-color-low, #ffffff)); border: 1px solid var(--proton-border, var(--border-color-high, #e2e8f0)); border-radius: 10px; padding: 0.9rem 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }',
-			'.dark-mode .pq-event-item { background: var(--proton-card-solid, #1e293b); border-color: var(--proton-border, var(--text-color-high, #334155)); }',
-			'.pq-event-left { display: flex; align-items: center; gap: 1rem; }',
-			'.pq-circle-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }',
-			'.pq-circle-icon.recovered { background: rgba(16,185,129,0.22); }',
-			'.pq-circle-icon.recovered .pq-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--proton-success, #10b981); }',
-			'.pq-circle-icon.ongoing { background: rgba(239,68,68,0.22); }',
-			'.pq-circle-icon.ongoing .pq-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--proton-danger, #ef4444); }',
-			'.pq-event-main-line { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem; }',
-			'.pq-event-name { font-size: 0.95rem; font-weight: 700; color: var(--text-color-high, #0f172a); }',
-			'.dark-mode .pq-event-name { color: var(--text-color-highest, #f8fafc); }',
-			'.pq-event-val { font-size: 0.92rem; font-weight: 700; font-family: monospace; color: var(--text-color-high, #1e293b); }',
-			'.dark-mode .pq-event-val { color: var(--text-color-highest, #f8fafc); }',
-			'.pq-event-subline { font-size: 0.78rem; color: var(--text-color-medium, #94a3b8); }',
-			'.pq-tab-btn { border: none; background: transparent; padding: 5px 14px; font-size: 0.82rem; font-weight: 500; color: var(--text-color-medium, #64748b); border-radius: 6px; cursor: pointer; transition: all 0.2s; }',
-			'.pq-tab-btn.active { background: var(--proton-card-solid, var(--background-color-low, #ffffff)); color: var(--text-color-high, #0f172a); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }',
-			'.dark-mode .pq-tab-btn.active { background: var(--proton-bg-hover, #334155); color: var(--proton-fg, #ffffff); }'
+			'.pq-rule-unsupported-note { font-size: 0.72rem; color: var(--text-color-medium, #94a3b8); margin-top: 0.6rem; display: flex; align-items: center; gap: 0.35rem; }'
 		]);
 
 		container.appendChild(styleNode);
@@ -176,9 +152,6 @@ return view.extend({
 
 		// Render Alarm Rules Card
 		container.appendChild(this.renderRulesCard());
-
-		// Render Events Card
-		container.appendChild(this.renderEventsCard());
 
 		return container;
 	},
@@ -198,10 +171,16 @@ return view.extend({
 		var lastEvent = evs.length ? evs[0] : null;
 		var lastTitle = lastEvent ? (lastEvent.title || '') : _('Нет событий');
 
+		// Пороги берутся из сохранённых правил, а не из фиксированных значений
+		var r = this.rulesData;
+		var hdrInLow = parseFloat(r.in_volt_low_trig);
+		var hdrInHigh = parseFloat(r.in_volt_high_trig);
+		var hdrLoadHigh = parseFloat(r.load_high_trig);
+
 		var ongoingCount = 0;
 		if (!isConnected || !status.is_online) ongoingCount++;
-		if (status.load_percent && status.load_percent > 80) ongoingCount++;
-		if (status.input_voltage && (status.input_voltage < 190 || status.input_voltage > 250)) ongoingCount++;
+		if (status.load_percent && status.load_percent >= hdrLoadHigh) ongoingCount++;
+		if (status.input_voltage && (status.input_voltage < hdrInLow || status.input_voltage > hdrInHigh)) ongoingCount++;
 
 		var isAllNormal = ongoingCount === 0;
 		var topBadge = isAllNormal ?
@@ -247,7 +226,8 @@ return view.extend({
 				]),
 				E('div', { 'class': 'pq-summary-tile' }, [
 					E('div', { 'class': 'pq-summary-k' }, _('Последнее отклонение')),
-					E('div', { 'class': 'pq-summary-v', 'style': 'font-size:1.25rem;color:var(--text-color-high, #1e293b);' }, lastTitle)
+					E('div', { 'class': 'pq-summary-v', 'style': 'font-size:1.25rem;color:var(--text-color-high, #1e293b);' }, lastTitle),
+					E('a', { 'href': L.url('admin/services/ups_manager/events'), 'style': 'display:inline-block;margin-top:0.4rem;font-size:0.8rem;color:var(--proton-accent, #2563eb);font-weight:600;' }, _('Открыть журнал событий →'))
 				])
 			])
 		]);
@@ -259,31 +239,42 @@ return view.extend({
 		var status = this.statusData;
 		var isConnected = status && status.connected;
 
+		// Пороги берутся из сохранённых правил, а не из фиксированных значений
+		var r = this.rulesData;
+		var inLow = parseFloat(r.in_volt_low_trig);
+		var inHigh = parseFloat(r.in_volt_high_trig);
+		var outLow = parseFloat(r.out_volt_low_trig);
+		var outHigh = parseFloat(r.out_volt_high_trig);
+		var fqLow = parseFloat(r.in_freq_low_trig);
+		var fqHigh = parseFloat(r.in_freq_high_trig);
+		var tempTrig = parseFloat(r.temp_high_trig);
+		var loadHigh = parseFloat(r.load_high_trig);
+
 		// 1. Input Voltage
 		var inV = (isConnected && status.input_voltage !== null && status.input_voltage !== undefined) ? Number(status.input_voltage).toFixed(1) : '0.0';
-		var inVAbnormal = !isConnected || inV < 190 || inV > 250;
+		var inVAbnormal = !isConnected || Number(inV) < inLow || Number(inV) > inHigh;
 		var inVBadge = inVAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 2. Output Voltage
 		var outV = (isConnected && status.output_voltage !== null && status.output_voltage !== undefined) ? Number(status.output_voltage).toFixed(1) : '0.0';
-		var outVAbnormal = !isConnected || outV < 190 || outV > 250;
+		var outVAbnormal = !isConnected || Number(outV) < outLow || Number(outV) > outHigh;
 		var outVBadge = outVAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 3. Input Frequency
 		var inF = (isConnected && status.input_freq !== null && status.input_freq !== undefined) ? Number(status.input_freq).toFixed(1) : '0.0';
-		var inFAbnormal = !isConnected || inF < 47 || inF > 53;
+		var inFAbnormal = !isConnected || Number(inF) < fqLow || Number(inF) > fqHigh;
 		var inFBadge = inFAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 4. UPS Load
 		var load = (isConnected && status.load_percent !== null && status.load_percent !== undefined) ? Math.round(status.load_percent) : 0;
-		var loadAbnormal = load >= 80;
+		var loadAbnormal = load >= loadHigh;
 		var loadBadge = loadAbnormal ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'));
 
 		// 5. Temperature (Check if hardware supports it)
 		var hasTemp = isConnected && status.temperature !== null && status.temperature !== undefined && status.temperature !== '' && !isNaN(status.temperature);
 		var tempVal = hasTemp ? (Number(status.temperature).toFixed(1) + ' °C') : _('неизвестно');
 		var tempBadge = hasTemp ?
-			(status.temperature > 50 ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'))) :
+			(status.temperature > tempTrig ? E('span', { 'class': 'badge-pill badge-pill-red' }, _('Отклонение')) : E('span', { 'class': 'badge-pill badge-pill-green' }, _('Норма'))) :
 			E('span', { 'class': 'text-unsupported' }, _('Не поддерживается'));
 
 		// 6. UPS Status
@@ -303,7 +294,7 @@ return view.extend({
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (inVAbnormal ? 'var(--proton-danger, #dc2626)' : 'var(--proton-success, #059669)') }, inV + ' V'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('Норма: 190 ~ 250 В')),
+						E('span', {}, _('Норма: ') + inLow + ' ~ ' + inHigh + ' В'),
 						E('span', { 'class': 'pq-metric-mono' }, 'input.voltage')
 					])
 				]),
@@ -316,7 +307,7 @@ return view.extend({
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (outVAbnormal ? 'var(--proton-danger, #dc2626)' : 'var(--proton-success, #059669)') }, outV + ' V'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('Норма: 190 ~ 250 В')),
+						E('span', {}, _('Норма: ') + outLow + ' ~ ' + outHigh + ' В'),
 						E('span', { 'class': 'pq-metric-mono' }, 'output.voltage')
 					])
 				]),
@@ -329,7 +320,7 @@ return view.extend({
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (inFAbnormal ? 'var(--proton-danger, #dc2626)' : 'var(--proton-success, #059669)') }, inF + ' Hz'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('Норма: 47 ~ 53 Гц')),
+						E('span', {}, _('Норма: ') + fqLow + ' ~ ' + fqHigh + ' Гц'),
 						E('span', { 'class': 'pq-metric-mono' }, 'input.frequency')
 					])
 				]),
@@ -342,7 +333,7 @@ return view.extend({
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:var(--proton-accent, #2563eb);' }, load + ' %'),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('Норма: < 80 %')),
+						E('span', {}, _('Норма: < ') + loadHigh + ' %'),
 						E('span', { 'class': 'pq-metric-mono' }, 'ups.load')
 					])
 				]),
@@ -355,7 +346,7 @@ return view.extend({
 					]),
 					E('div', { 'class': 'pq-metric-val', 'style': 'color:' + (hasTemp ? 'var(--proton-fg, #1e293b)' : 'var(--proton-muted, #64748b)') }, tempVal),
 					E('div', { 'class': 'pq-metric-footer' }, [
-						E('span', {}, _('Норма: < 50 °C')),
+						E('span', {}, _('Норма: < ') + tempTrig + ' °C'),
 						E('span', { 'class': 'pq-metric-mono' }, 'battery.temperature')
 					])
 				]),
@@ -596,203 +587,6 @@ return view.extend({
 		]);
 	},
 
-	renderEventsCard: function() {
-		var self = this;
-
-		var tabAll = E('button', {
-			'class': 'pq-tab-btn' + (this.activeFilter === 'all' ? ' active' : ''),
-			'click': function() { self.switchTab('all'); }
-		}, _('Все'));
-
-		var tabOngoing = E('button', {
-			'class': 'pq-tab-btn' + (this.activeFilter === 'ongoing' ? ' active' : ''),
-			'click': function() { self.switchTab('ongoing'); }
-		}, _('Активные'));
-
-		var tabRecovered = E('button', {
-			'class': 'pq-tab-btn' + (this.activeFilter === 'recovered' ? ' active' : ''),
-			'click': function() { self.switchTab('recovered'); }
-		}, _('Восстановленные'));
-
-		var refreshEventsBtn = E('button', {
-			'class': 'btn cbi-button cbi-button-action',
-			'style': 'border-radius:6px;padding:0.35rem 0.75rem;font-size:0.82rem;',
-			'click': function() { self.refreshEvents(); }
-		}, ['🔄 ', _('Обновить')]);
-
-		var clearBtn = E('button', {
-			'class': 'btn cbi-button cbi-button-neutral',
-			'style': 'border-radius:6px;padding:0.35rem 0.75rem;font-size:0.82rem;',
-			'click': function() {
-				if (!confirm(_('Удалить все восстановленные события из истории?'))) return;
-				callClearQualityEvents().then(function() {
-					self.eventsList = [];
-					self.updateEventsList();
-					ui.addNotification(null, E('p', {}, _('Восстановленные события удалены.')), 'info');
-				});
-			}
-		}, ['🗑️ ', _('Удалить восстановленные')]);
-
-		var card = E('div', { 'class': 'pq-card', 'id': 'pq-events-card' }, [
-			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;' }, [
-				E('div', {}, [
-					E('h3', { 'class': 'pq-section-heading' }, ['⚠️ ', _('События отклонений')]),
-					E('p', { 'class': 'pq-section-desc', 'style': 'margin-bottom:0;' }, _('Просмотр текущих и уже восстановленных отклонений качества электроэнергии.'))
-				]),
-				E('div', { 'style': 'display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;' }, [
-					E('div', { 'style': 'display:flex;background:var(--background-color-low, #f1f5f9);border-radius:8px;padding:3px;gap:2px;' }, [
-						tabAll, tabOngoing, tabRecovered
-					]),
-					refreshEventsBtn,
-					clearBtn
-				])
-			]),
-			E('div', { 'id': 'pq-events-list-container' }, this.renderEventRows()),
-			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;font-size:0.82rem;color:var(--text-color-medium, #64748b);margin-top:1.25rem;border-top:1px solid var(--proton-border-light, #f1f5f9);padding-top:0.75rem;' }, [
-				E('span', { 'id': 'pq-events-count-label' }, _('Всего ') + this.eventsList.length + _(' записей · стр. 1/1')),
-				E('div', { 'style': 'display:flex;align-items:center;gap:0.5rem;' }, [
-					E('span', {}, _('20 записей на странице')),
-					E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'disabled': true, 'style': 'padding:2px 8px;font-size:0.8rem;' }, _('Назад')),
-					E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'disabled': true, 'style': 'padding:2px 8px;font-size:0.8rem;' }, _('Вперёд'))
-				])
-			])
-		]);
-
-		return card;
-	},
-
-	renderEventRows: function() {
-		var self = this;
-		var filtered = this.eventsList.filter(function(item) {
-			if (self.activeFilter === 'ongoing') return item.status === 'ongoing';
-			if (self.activeFilter === 'recovered') return item.status === 'recovered';
-			return true;
-		});
-
-		if (filtered.length === 0) {
-			return [
-				E('div', { 'style': 'text-align:center;padding:2.5rem 0;color:var(--text-color-medium, #94a3b8);font-size:0.9rem;' }, _('Записей об отклонениях качества электроэнергии пока нет'))
-			];
-		}
-
-		var rows = [];
-		filtered.forEach(function(item) {
-			var isRecovered = item.status === 'recovered';
-			var circleNode = E('div', { 'class': 'pq-circle-icon ' + (isRecovered ? 'recovered' : 'ongoing') }, [
-				E('div', { 'class': 'pq-dot' })
-			]);
-
-			var sevBadge = item.severity === 'critical' ?
-				E('span', { 'class': 'badge-pill badge-pill-red' }, _('Критично')) :
-				E('span', { 'class': 'badge-pill badge-pill-gray' }, _('Предупреждение'));
-
-			var statusPill = isRecovered ?
-				E('span', { 'class': 'badge-pill badge-pill-green' }, _('Восстановленные')) :
-				E('span', { 'class': 'badge-pill badge-pill-red' }, _('Активные'));
-
-			var detailBtn = E('button', {
-				'class': 'btn cbi-button cbi-button-neutral',
-				'style': 'padding:0.3rem 0.85rem;font-size:0.82rem;border-radius:6px;',
-				'click': function() { self.showEventModal(item); }
-			}, _('Подробнее'));
-
-			var row = E('div', { 'class': 'pq-event-item' }, [
-				E('div', { 'class': 'pq-event-left' }, [
-					circleNode,
-					E('div', {}, [
-						E('div', { 'class': 'pq-event-main-line' }, [
-							E('span', { 'class': 'pq-event-name' }, item.title || _('Колебания показателей электроэнергии')),
-							sevBadge,
-							E('span', { 'class': 'pq-event-val' }, item.value || '--'),
-							statusPill
-						]),
-						E('div', { 'class': 'pq-event-subline' }, (item.time || '') + ' · ' + (item.id || ''))
-					])
-				]),
-				E('div', {}, [detailBtn])
-			]);
-
-			rows.push(row);
-		});
-
-		return rows;
-	},
-
-	switchTab: function(tabName) {
-		this.activeFilter = tabName;
-		var card = document.getElementById('pq-events-card');
-		if (card) {
-			var btns = card.querySelectorAll('.pq-tab-btn');
-			btns.forEach(function(b) { b.classList.remove('active'); });
-			if (tabName === 'all' && btns[0]) btns[0].classList.add('active');
-			if (tabName === 'ongoing' && btns[1]) btns[1].classList.add('active');
-			if (tabName === 'recovered' && btns[2]) btns[2].classList.add('active');
-		}
-		this.updateEventsList();
-	},
-
-	updateEventsList: function() {
-		var container = document.getElementById('pq-events-list-container');
-		if (container) {
-			dom.content(container, this.renderEventRows());
-		}
-		var countLabel = document.getElementById('pq-events-count-label');
-		if (countLabel) {
-			countLabel.innerText = _('Всего ') + this.eventsList.length + _(' записей · стр. 1/1');
-		}
-	},
-
-	showEventModal: function(item) {
-		ui.showModal(_('Подробности события отклонения качества электроэнергии'), [
-			E('table', { 'class': 'table', 'style': 'margin-top:0.5rem;' }, [
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;width:35%;'  }, _('Название события / ID')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, (item.title || '') + ' (' + (item.id || '') + ')')
-				]),
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Уровень предупреждения')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.severity === 'critical' ? _('Критическое предупреждение') : _('Информационное предупреждение'))
-				]),
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Текущее состояние')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.status === 'recovered' ? _('🟢 Восстановлено') : _('🔴 Отклонение продолжается'))
-				]),
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Значение при срабатывании')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-family:monospace;font-weight:bold;'  }, item.value || '--')
-				]),
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Время срабатывания')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.time || '--')
-				]),
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Длительность отклонения')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.duration || _('Кратковременное, устранено'))
-				]),
-				E('tr', {}, [
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;'  }, _('Пояснение к определению')),
-					E('td', { 'style': 'color:var(--text-color-high, #0f172a);' }, item.detail || _('Показатели сети вышли за безопасные пределы. Событие автоматически записано в журнал анализа качества электроэнергии.'))
-				])
-			]),
-			E('div', { 'class': 'right', 'style': 'margin-top:1.5rem;' }, [
-				E('button', {
-					'class': 'btn cbi-button cbi-button-action',
-					'click': ui.hideModal
-				}, _('Закрыть'))
-			])
-		]);
-	},
-
-	refreshEvents: function() {
-		var self = this;
-		return callGetQualityEvents().then(function(res) {
-			if (res && res.events) {
-				self.eventsList = res.events;
-				self.updateEventsList();
-			}
-		});
-	},
-
 	refreshAll: function() {
 		var self = this;
 		return Promise.all([
@@ -804,12 +598,13 @@ return view.extend({
 				self.eventsList = res[1].events;
 			}
 			// Refresh UI elements
+			var header = document.getElementById('pq-top-header-card');
+			if (header) dom.content(header, self.renderHeaderCard());
 			var grid = document.getElementById('pq-metrics-grid');
 			if (grid && grid.parentNode) {
 				var newCard = self.renderCurrentMetricsCard();
 				grid.parentNode.replaceWith(newCard);
 			}
-			self.updateEventsList();
 			ui.addNotification(null, E('p', {}, _('Данные о качестве электроэнергии обновлены')), 'info');
 		});
 	}
