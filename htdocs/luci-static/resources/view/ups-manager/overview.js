@@ -93,10 +93,19 @@ return view.extend({
 		// 2. Four Core Metric Tiles
 		var topMetrics = E('div', { 'class': 'ups-top-metrics', 'id': 'ups-metrics-grid' }, self.renderTopMetrics(status));
 
-		// 3. Battery & charging detail card
-		var batteryCard = E('div', { 'class': 'ups-panel-card', 'id': 'card-battery-detail' }, self.renderBatteryDetail(status));
+		// 3. Left & Right Two-Column Section
+		var twoCol = E('div', { 'class': 'ups-twocol-grid' }, [
+			// Left Card: Battery Capacity & Charging State
+			E('div', { 'class': 'ups-panel-card', 'id': 'card-battery-detail' }, self.renderBatteryDetail(status)),
 
-		dom.append(container, [styleNode, topBanner, topMetrics, batteryCard]);
+			// Right Card: Topology & Power Path
+			E('div', { 'class': 'ups-panel-card', 'id': 'card-topology-detail' }, self.renderTopologyDetail(status))
+		]);
+
+		// 4. Bottom Topology Strip Card
+		var bottomTopology = E('div', { 'class': 'ups-panel-card', 'id': 'card-bottom-topology' }, self.renderBottomTopology(status));
+
+		dom.append(container, [styleNode, topBanner, topMetrics, twoCol, bottomTopology]);
 
 		// Auto polling
 		poll.add(function() {
@@ -174,21 +183,23 @@ return view.extend({
 		var isOnline = isConnected && status.is_online;
 		var isBattery = isConnected && status.is_on_battery;
 
-		// 1. Входное напряжение (состояние питания уже показано в баннере)
-		var inV = (isConnected && status.input_voltage !== null && status.input_voltage !== undefined) ? Number(status.input_voltage) : null;
-		var inVText = (inV !== null && !isNaN(inV)) ? inV.toFixed(1) + ' V' : '— V';
-		var inVColor = 'var(--proton-danger, #ef4444)';
-		var inVSub = 'Офлайн';
+		// 1. 供电状态
+		var pwrStateText = 'Офлайн, не подключён';
+		var pwrStateColor = 'var(--proton-danger, #ef4444)';
+		var pwrSubText = 'OFFLINE';
 		if (isConnected) {
-			if (inV === null || isNaN(inV)) {
-				inVColor = 'var(--proton-muted, #64748b)';
-				inVSub = 'Нет данных';
-			} else if (inV < 190 || inV > 250) {
-				inVColor = 'var(--proton-warning, #d97706)';
-				inVSub = 'Отклонение';
+			if (isBattery) {
+				pwrStateText = 'Работа от батареи';
+				pwrStateColor = 'var(--proton-warning, #d97706)';
+				pwrSubText = 'ON BATTERY';
+			} else if (isOnline) {
+				pwrStateText = 'Питание от сети';
+				pwrStateColor = 'var(--proton-success, #10b981)';
+				pwrSubText = 'ONLINE';
 			} else {
-				inVColor = 'var(--proton-success, #10b981)';
-				inVSub = 'Норма';
+				pwrStateText = status.status || 'Готов';
+				pwrStateColor = 'var(--proton-accent, #3b82f6)';
+				pwrSubText = 'STANDBY';
 			}
 		}
 
@@ -203,14 +214,14 @@ return view.extend({
 		var loadVal = (isConnected && status.load_percent !== null) ? status.load_percent : 0;
 
 		return [
-			// Metric 1: Входное напряжение
+			// Metric 1
 			E('div', { 'class': 'ups-metric-tile' }, [
-				E('div', { 'class': 'ups-tile-title' }, _('Входное напряжение')),
-				E('div', { 'class': 'ups-tile-value', 'style': 'color:' + inVColor + ';font-size:1.45rem;' }, [
-					E('span', { 'style': 'display:inline-block;width:14px;height:14px;border-radius:50%;background:' + inVColor + ';' }),
-					inVText
+				E('div', { 'class': 'ups-tile-title' }, _('Состояние питания')),
+				E('div', { 'class': 'ups-tile-value', 'style': 'color:' + pwrStateColor + ';font-size:1.45rem;' }, [
+					E('span', { 'style': 'display:inline-block;width:14px;height:14px;border-radius:50%;background:' + pwrStateColor + ';' }),
+					pwrStateText
 				]),
-				E('p', { 'class': 'ups-tile-source' }, inVSub)
+				E('p', { 'class': 'ups-tile-source' }, pwrSubText)
 			]),
 
 			// Metric 2
@@ -251,6 +262,10 @@ return view.extend({
 		var freq = (isConnected && status.input_freq) ? status.input_freq : '0.0';
 		var temp = (isConnected && status.temperature) ? status.temperature : '0.0';
 
+		var usbDesc = isConnected ?
+			('Прямая связь USB-HID с платой (VendorId: ' + (status.vendorid || '0764') + ' ProductId: ' + (status.productid || '0501') + ') - 🟢 онлайн') :
+			('Прямая связь USB-HID с платой (VendorId: 0764 ProductId: 0501) - 🔴 офлайн, не подключён');
+
 		return [
 			E('h3', { 'class': 'ups-section-heading' }, ['🔋 ', _('Ёмкость батареи и состояние заряда/разряда')]),
 			E('div', { 'class': 'ups-progress-wrap' }, [
@@ -280,7 +295,77 @@ return view.extend({
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Частота сети / внутренняя температура')),
 					E('td', { 'class': 'ups-val-col' }, freq + ' Hz · ' + temp + ' °C')
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Скорость вентилятора охлаждения')),
+					E('td', { 'class': 'ups-val-col', 'style': 'color:var(--proton-accent, #2563eb);' }, '⚡ ' + _('Бесшумное охлаждение без вентилятора'))
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Способ связи и сбора данных')),
+					E('td', { 'class': 'ups-val-col', 'style': 'color:' + (isConnected ? 'var(--proton-success, #059669)' : 'var(--proton-danger, #dc2626)') + ';font-size:0.8rem;' }, usbDesc)
 				])
+			])
+		];
+	},
+
+	renderTopologyDetail: function(status) {
+		var isConnected = status && status.connected;
+		var isOnline = isConnected && status.is_online;
+		var isBattery = isConnected && status.is_on_battery;
+
+		var ecoText = 'Офлайн';
+		var bypassBadge = isOnline ? E('span', { 'class': 'ups-badge-pill badge-green' }, _('Готов')) : E('span', { 'class': 'ups-badge-pill badge-gray' }, _('Офлайн'));
+		var invBadge = isConnected ? E('span', { 'class': 'ups-badge-pill badge-green' }, _('Онлайн')) : E('span', { 'class': 'ups-badge-pill badge-gray' }, _('Офлайн'));
+		var chgText = isOnline ? 'Подзаряд (поддержание)' : (isBattery ? 'Разряд' : 'Офлайн');
+		var busV = (isConnected && status.output_voltage) ? (Math.round(status.output_voltage * 1.414) + ' V DC') : '0 V DC';
+		var synText = isOnline ? E('span', { 'style': 'color:var(--proton-success, #059669);font-weight:600;' }, _('Синхронизировано')) : E('span', { 'style': 'color:var(--proton-accent, #2563eb);font-weight:600;' }, _('Не синхронизировано'));
+
+		return [
+			E('h3', { 'class': 'ups-section-heading' }, ['⚡ ', _('Топология и путь питания (ECO / байпас / инвертор)')]),
+			E('table', { 'class': 'ups-table-rows', 'style': 'margin-top:1.6rem;' }, [
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Режим энергосбережения ECO')),
+					E('td', { 'class': 'ups-val-col' }, ecoText)
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Статический байпас (Bypass)')),
+					E('td', { 'class': 'ups-val-col' }, [bypassBadge])
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Состояние инвертора')),
+					E('td', { 'class': 'ups-val-col' }, [invBadge])
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Состояние выпрямителя и зарядки')),
+					E('td', { 'class': 'ups-val-col' }, chgText)
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Высокое напряжение шины постоянного тока (Bus)')),
+					E('td', { 'class': 'ups-val-col' }, busV)
+				]),
+				E('tr', {}, [
+					E('td', { 'class': 'ups-label-col' }, _('Синхронизация с сетью (PLL)')),
+					E('td', { 'class': 'ups-val-col' }, [synText])
+				])
+			])
+		];
+	},
+
+	renderBottomTopology: function(status) {
+		var isConnected = status && status.connected;
+		var modelTitle = (status && status.model) ? (status.manufacturer ? status.manufacturer + ' ' + status.model : status.model) : _('CPS UT650EGC / Santak Castle 1K');
+
+		var badgeNode = isConnected ?
+			E('span', { 'class': 'ups-badge-pill badge-green' }, '🟢 ' + _('Связь в норме (прямое USB-подключение)')) :
+			E('span', { 'class': 'ups-badge-pill badge-red' }, '🔴 ' + _('Офлайн, не подключён (USB/последовательный сервер отключён)'));
+
+		return [
+			E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;' }, [
+				E('div', { 'style': 'font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;color:var(--text-color-high, #0f172a);' }, [
+					'⚡ ',
+					_('Направление потока питания и переключение режимов (') + modelTitle + ')'
+				]),
+				E('div', {}, [badgeNode])
 			])
 		];
 	},
@@ -296,5 +381,11 @@ return view.extend({
 
 		var battCard = document.getElementById('card-battery-detail');
 		if (battCard) dom.content(battCard, this.renderBatteryDetail(status));
+
+		var topoCard = document.getElementById('card-topology-detail');
+		if (topoCard) dom.content(topoCard, this.renderTopologyDetail(status));
+
+		var btmCard = document.getElementById('card-bottom-topology');
+		if (btmCard) dom.content(btmCard, this.renderBottomTopology(status));
 	}
 });
