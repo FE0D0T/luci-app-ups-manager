@@ -42,19 +42,19 @@ var MODES = [
 function stateView(st) {
 	var mode = st.mode || 'off';
 	if (st.state === 'unknown') {
-		return { text: 'Нет связи с ИБП', color: '#dc2626' };
+		return { text: 'Нет связи с ИБП', color: 'var(--proton-danger, #dc2626)' };
 	}
 	if (mode === 'schedule') {
 		var now = (st.now_state === 'disabled') ? 'сейчас выключен' : 'сейчас включён';
-		return { text: 'Расписание (' + now + ')', color: '#7c3aed' };
+		return { text: 'Расписание (' + now + ')', color: 'var(--ups-series-power, #7c3aed)' };
 	}
 	if (mode === 'permanent_off') {
-		return { text: 'Выключен постоянно', color: '#dc2626' };
+		return { text: 'Выключен постоянно', color: 'var(--proton-danger, #dc2626)' };
 	}
 	if (st.state === 'enabled') {
-		return { text: 'Звук включён', color: '#16a34a' };
+		return { text: 'Звук включён', color: 'var(--proton-success, #16a34a)' };
 	}
-	return { text: 'Звук выключен', color: '#f97316' };
+	return { text: 'Звук выключен', color: 'var(--proton-warning, #f97316)' };
 }
 
 function scheduleText(st) {

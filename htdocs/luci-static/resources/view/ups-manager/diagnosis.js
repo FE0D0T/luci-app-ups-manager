@@ -119,7 +119,7 @@ return view.extend({
 			]),
 			E('pre', {
 				'id': 'log-viewer-pre',
-				'style': 'background:#0f172a;color:#e2e8f0;padding:1.25rem;border-radius:0.5rem;font-size:0.85rem;max-height:400px;overflow-y:auto;line-height:1.5;'
+				'style': 'background:var(--proton-card-solid, var(--background-color-high, #0f172a));color:var(--proton-fg, var(--text-color-highest, #e2e8f0));padding:1.25rem;border-radius:0.5rem;border:1px solid var(--proton-border, #334155);font-size:0.85rem;max-height:400px;overflow-y:auto;line-height:1.5;'
 			}, (logs.logs && logs.logs.length) ? logs.logs.join('\n') : _('Данных журнала пока нет'))
 		]);
 

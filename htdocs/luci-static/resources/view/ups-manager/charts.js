@@ -29,36 +29,36 @@ var CHARTS = [
 	{
 		id: 'voltage', icon: '🔌', title: 'Входное и выходное напряжение (В)',
 		series: [
-			{ key: 'v',  color: '#2563eb', label: 'Вход от сети' },
-			{ key: 'vo', color: '#10b981', label: 'Выход инвертора' }
+			{ key: 'v',  color: 'var(--proton-accent, #2563eb)', label: 'Вход от сети' },
+			{ key: 'vo', color: 'var(--proton-success, #10b981)', label: 'Выход инвертора' }
 		],
-		extra: { key: 'vmin', color: '#f97316', label: 'Мин. вход за минуту', dashed: true },
+		extra: { key: 'vmin', color: 'var(--ups-series-vmin, #f97316)', label: 'Мин. вход за минуту', dashed: true },
 		minSpan: 10
 	},
 	{
 		id: 'battery', icon: '🔋', title: 'Заряд батареи и загрузка (%)',
 		series: [
-			{ key: 'c', color: '#10b981', label: 'Заряд батареи (%)' },
-			{ key: 'l', color: '#f59e0b', label: 'Загрузка (%)' }
+			{ key: 'c', color: 'var(--proton-success, #10b981)', label: 'Заряд батареи (%)' },
+			{ key: 'l', color: 'var(--proton-warning, #f59e0b)', label: 'Загрузка (%)' }
 		],
 		fixedMin: 0, fixedMax: 100
 	},
 	{
 		id: 'power', icon: '⚡', title: 'Мощность нагрузки (Вт)',
-		series: [ { key: 'p', color: '#8b5cf6', label: 'Мощность (Вт)' } ],
+		series: [ { key: 'p', color: 'var(--ups-series-power, #8b5cf6)', label: 'Мощность (Вт)' } ],
 		minSpan: 50, baselineZero: true
 	},
 	{
 		id: 'frequency', icon: '〰️', title: 'Частота сети и выхода (Гц)',
 		series: [
-			{ key: 'ifq', color: '#6366f1', label: 'Входная частота' },
-			{ key: 'ofq', color: '#06b6d4', label: 'Выходная частота' }
+			{ key: 'ifq', color: 'var(--ups-series-ifq, #6366f1)', label: 'Входная частота' },
+			{ key: 'ofq', color: 'var(--ups-series-ofq, #06b6d4)', label: 'Выходная частота' }
 		],
 		requires: ['ifq', 'ofq'], minSpan: 2
 	},
 	{
 		id: 'temperature', icon: '🌡️', title: 'Температура ИБП (°C)',
-		series: [ { key: 'temp', color: '#e11d48', label: 'Температура' } ],
+		series: [ { key: 'temp', color: 'var(--ups-series-temp, #e11d48)', label: 'Температура' } ],
 		requires: ['temp'], minSpan: 4
 	}
 ];
@@ -167,6 +167,8 @@ return view.extend({
 			E('div', { 'class': 'cbi-map-descr', 'style': 'color:var(--text-color-medium, #64748b);margin-bottom:1.25rem;' },
 				_('Запись напряжения, частоты, заряда, загрузки, мощности и температуры. Данные хранятся только в оперативной памяти (tmpfs). Нажмите на график — покажутся точные значения.')),
 			E('style', {}, [
+				':root{--ups-series-vmin:#f97316;--ups-series-power:#8b5cf6;--ups-series-ifq:#6366f1;--ups-series-ofq:#06b6d4;--ups-series-temp:#e11d48;}',
+				':root[data-theme="light"]{--ups-series-vmin:#c2410c;--ups-series-power:#7c3aed;--ups-series-ifq:#4f46e5;--ups-series-ofq:#0891b2;--ups-series-temp:#e1184a;}',
 				'.ups-chart-card{padding:0.7rem 0.85rem;}',
 				'#ups-stats-strip{gap:0.35rem 0.6rem;padding:0.5rem 0.7rem;margin-bottom:0.6rem;}',
 				'#ups-outage-bar{margin-bottom:0.6rem;font-size:0.8rem;padding:0.35rem 0.6rem;}',
@@ -193,7 +195,7 @@ return view.extend({
 
 		var toolbar = E('div', {
 			'class': 'ups-toolbar',
-			'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;'
+			'style': 'background:var(--proton-card-solid, var(--background-color-low, #ffffff));border:1px solid var(--proton-border, #e2e8f0);border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;'
 		}, [
 			E('div', { 'class': 'ups-toolbar-label', 'style': 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;' },
 				[E('span', { 'style': 'font-weight:600;font-size:0.85rem;color:var(--text-color-high, #334155);' }, _('Диапазон времени:'))].concat(rangeButtons)),
@@ -217,13 +219,13 @@ return view.extend({
 		// Current readings strip
 		var statsStrip = E('div', {
 			'id': 'ups-stats-strip',
-			'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:10px;padding:0.7rem 1.25rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:1.25rem;'
+			'style': 'background:var(--proton-card-solid, var(--background-color-low, #ffffff));border:1px solid var(--proton-border, #e2e8f0);border-radius:10px;padding:0.7rem 1.25rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:1.25rem;'
 		});
 
 		// Outage summary bar
 		var outageBar = E('div', {
 			'id': 'ups-outage-bar',
-			'style': 'margin-bottom:1rem;padding:0.45rem 1rem;border-radius:8px;background:rgba(148,163,184,0.12);font-size:0.85rem;'
+			'style': 'margin-bottom:1rem;padding:0.45rem 1rem;border-radius:8px;background:var(--proton-bg-secondary, rgba(148,163,184,0.12));border:1px solid var(--proton-border, rgba(148,163,184,0.35));font-size:0.85rem;'
 		});
 
 		dom.append(container, [toolbar, statsStrip, outageBar]);
@@ -234,7 +236,7 @@ return view.extend({
 
 			var card = E('div', {
 				'class': 'cbi-section ups-chart-card',
-				'style': 'background:var(--background-color-low, #ffffff);border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);'
+				'style': 'background:var(--proton-card-solid, var(--background-color-low, #ffffff));border:1px solid var(--proton-border, #e2e8f0);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;box-shadow:var(--proton-shadow-sm, 0 2px 8px rgba(0,0,0,0.04));'
 			}, [
 				E('div', { 'style': 'margin-bottom:0.35rem;' }, [
 					E('span', { 'class': 'ups-chart-title', 'style': 'font-weight:700;font-size:0.95rem;color:var(--text-color-high, #1e293b);' },
@@ -258,7 +260,7 @@ return view.extend({
 			var box = document.getElementById('chart-' + ch.id);
 			if (!box) return;
 			var tip = E('div', {
-				'style': 'position:absolute;top:8px;left:8px;right:auto;display:none;background:rgba(15,23,42,0.92);color:#f8fafc;border-radius:8px;padding:0.5rem 0.7rem;font-size:' + (isMobile() ? 0.85 : 0.75) + 'rem;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:none;white-space:nowrap;'
+				'style': 'position:absolute;top:8px;left:8px;right:auto;display:none;background:var(--proton-tooltip-bg, rgba(15,23,42,0.92));color:var(--proton-fg, #f8fafc);border:1px solid var(--proton-tooltip-border, rgba(255,255,255,0.1));border-radius:8px;padding:0.5rem 0.7rem;font-size:' + (isMobile() ? 0.85 : 0.75) + 'rem;line-height:1.5;box-shadow:var(--proton-tooltip-shadow, 0 4px 12px rgba(0,0,0,0.3));pointer-events:none;white-space:nowrap;'
 			});
 			self.chartTip[ch.id] = tip;
 			box.addEventListener('mousemove', function(e) { self.handleHover(ch.id, e, box); });
@@ -385,19 +387,19 @@ return view.extend({
 		}
 		var modeBadge;
 		if (st.is_on_battery) {
-			modeBadge = '<div style="min-width:90px;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-color-medium,#94a3b8);text-transform:uppercase;">' + _('Питание') + '</div><div style="display:inline-block;padding:2px 10px;border-radius:9999px;font-size:0.8rem;font-weight:700;background:rgba(239,68,68,0.18);color:#dc2626;">' + _('От батареи') + '</div></div>';
+			modeBadge = '<div style="min-width:90px;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-color-medium,#94a3b8);text-transform:uppercase;">' + _('Питание') + '</div><div style="display:inline-block;padding:2px 10px;border-radius:9999px;font-size:0.8rem;font-weight:700;background:rgba(239,68,68,0.18);color:var(--proton-danger, #dc2626);">' + _('От батареи') + '</div></div>';
 		} else {
-			modeBadge = '<div style="min-width:90px;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-color-medium,#94a3b8);text-transform:uppercase;">' + _('Питание') + '</div><div style="display:inline-block;padding:2px 10px;border-radius:9999px;font-size:0.8rem;font-weight:700;background:rgba(5,150,105,0.18);color:#059669;">' + _('От сети') + '</div></div>';
+			modeBadge = '<div style="min-width:90px;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-color-medium,#94a3b8);text-transform:uppercase;">' + _('Питание') + '</div><div style="display:inline-block;padding:2px 10px;border-radius:9999px;font-size:0.8rem;font-weight:700;background:rgba(5,150,105,0.18);color:var(--proton-success, #059669);">' + _('От сети') + '</div></div>';
 		}
 		var tiles = [modeBadge];
-		tiles.push(tile(_('Сеть'), fmtNum(st.input_voltage, 1) + ' В', '#2563eb'));
-		tiles.push(tile(_('Выход'), fmtNum(st.output_voltage, 1) + ' В', '#10b981'));
-		tiles.push(tile(_('Частота'), fmtNum(st.input_freq, 1) + ' Гц', '#6366f1'));
-		tiles.push(tile(_('Заряд'), fmtNum(st.battery_charge, 0) + ' %', '#10b981'));
-		tiles.push(tile(_('Загрузка'), fmtNum(st.load_percent, 0) + ' %', '#f59e0b'));
-		tiles.push(tile(_('Мощность'), fmtNum(st.power, 1) + ' Вт', '#8b5cf6'));
-		tiles.push(tile(_('Температура'), fmtNum(st.temperature, 1) + ' °C', '#e11d48'));
-		tiles.push(tile(_('Батарея'), fmtNum(st.battery_voltage, 2) + ' В', '#64748b'));
+		tiles.push(tile(_('Сеть'), fmtNum(st.input_voltage, 1) + ' В', 'var(--proton-accent, #2563eb)'));
+		tiles.push(tile(_('Выход'), fmtNum(st.output_voltage, 1) + ' В', 'var(--proton-success, #10b981)'));
+		tiles.push(tile(_('Частота'), fmtNum(st.input_freq, 1) + ' Гц', 'var(--ups-series-ifq, #6366f1)'));
+		tiles.push(tile(_('Заряд'), fmtNum(st.battery_charge, 0) + ' %', 'var(--proton-success, #10b981)'));
+		tiles.push(tile(_('Загрузка'), fmtNum(st.load_percent, 0) + ' %', 'var(--proton-warning, #f59e0b)'));
+		tiles.push(tile(_('Мощность'), fmtNum(st.power, 1) + ' Вт', 'var(--ups-series-power, #8b5cf6)'));
+		tiles.push(tile(_('Температура'), fmtNum(st.temperature, 1) + ' °C', 'var(--ups-series-temp, #e11d48)'));
+		tiles.push(tile(_('Батарея'), fmtNum(st.battery_voltage, 2) + ' В', 'var(--proton-muted, #64748b)'));
 		return tiles.join('');
 	},
 
@@ -406,15 +408,15 @@ return view.extend({
 		if (!el) return;
 		var segs = this.outageSegments(points);
 		if (!segs.length) {
-			el.innerHTML = '<span style="color:#059669;font-weight:600;">✓ ' + _('За выбранный период отключений сети не зафиксировано') + '</span>';
+			el.innerHTML = '<span style="color:var(--proton-success, #059669);font-weight:600;">✓ ' + _('За выбранный период отключений сети не зафиксировано') + '</span>';
 			return;
 		}
 		var total = 0;
 		for (var i = 0; i < segs.length; i++) total += Math.max(60, segs[i][1] - segs[i][0]);
 		var mins = Math.round(total / 60);
 		var txt = total >= 3600 ? Math.floor(mins / 60) + ' ч ' + (mins % 60) + ' мин' : mins + ' мин';
-		el.innerHTML = '<span style="color:#dc2626;font-weight:700;">⚠️ ' + _('Отключений сети: ') + segs.length + ' · ' + _('суммарно без питания: ') + txt + '</span>' +
-			' <span style="color:#64748b;font-size:0.8rem;">· ' + _('красные зоны на графиках — питание от батареи') + '</span>';
+		el.innerHTML = '<span style="color:var(--proton-danger, #dc2626);font-weight:700;">⚠️ ' + _('Отключений сети: ') + segs.length + ' · ' + _('суммарно без питания: ') + txt + '</span>' +
+			' <span style="color:var(--proton-muted, #64748b);font-size:0.8rem;">· ' + _('красные зоны на графиках — питание от батареи') + '</span>';
 	},
 
 	renderChartStats: function(ch, points) {
@@ -453,7 +455,7 @@ return view.extend({
 				}
 			}
 			if (!avail) {
-				el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:0.5rem;color:#94a3b8;font-size:' + (isMobile() ? 0.8 : 0.85) + 'rem;">' +
+				el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;padding:0.5rem;color:var(--proton-muted, #94a3b8);font-size:' + (isMobile() ? 0.8 : 0.85) + 'rem;">' +
 					_('Драйвер NUT этого ИБП не сообщает эти данные — график недоступен') + '</div>';
 				if (statsEl) statsEl.innerHTML = '';
 				return;
@@ -523,9 +525,9 @@ return view.extend({
 		// Horizontal grid + Y labels
 		for (var g = 0; g < sc.ticks.length; g++) {
 			var yv = getY(sc.ticks[g]);
-			svg.push('<line x1="' + pad.left + '" y1="' + yv.toFixed(1) + '" x2="' + (pad.left + chartW) + '" y2="' + yv.toFixed(1) + '" stroke="#e2e8f0" stroke-width="1" />');
+			svg.push('<line x1="' + pad.left + '" y1="' + yv.toFixed(1) + '" x2="' + (pad.left + chartW) + '" y2="' + yv.toFixed(1) + '" style="stroke:var(--proton-chart-guide, #e2e8f0)" stroke-width="1" />');
 			var lbl = sc.step < 1 ? sc.ticks[g].toFixed(1) : String(Math.round(sc.ticks[g]));
-			svg.push('<text x="' + (pad.left - 6) + '" y="' + (yv + 4).toFixed(1) + '" font-size="' + fs + '" text-anchor="end" fill="#94a3b8">' + lbl + '</text>');
+			svg.push('<text x="' + (pad.left - 6) + '" y="' + (yv + 4).toFixed(1) + '" font-size="' + fs + '" text-anchor="end" style="fill:var(--proton-muted, #94a3b8)">' + lbl + '</text>');
 		}
 
 		// Vertical grid + time labels (aligned to local-time boundaries)
@@ -536,9 +538,9 @@ return view.extend({
 		var t0 = Math.ceil((tMin + tz) / tstep) * tstep - tz;
 		for (var tt = t0; tt <= tMax; tt += tstep) {
 			var x = getX(tt);
-			svg.push('<line x1="' + x.toFixed(1) + '" y1="' + pad.top + '" x2="' + x.toFixed(1) + '" y2="' + (pad.top + chartH) + '" stroke="#f1f5f9" stroke-width="1" />');
+			svg.push('<line x1="' + x.toFixed(1) + '" y1="' + pad.top + '" x2="' + x.toFixed(1) + '" y2="' + (pad.top + chartH) + '" style="stroke:var(--proton-border-light, #f1f5f9)" stroke-width="1" />');
 			var tl = tstep >= 86400 ? formatDay(tt) : formatHM(tt);
-			svg.push('<text x="' + x.toFixed(1) + '" y="' + (pad.top + chartH + 16) + '" font-size="' + fs + '" fill="#94a3b8" text-anchor="middle">' + tl + '</text>');
+			svg.push('<text x="' + x.toFixed(1) + '" y="' + (pad.top + chartH + 16) + '" font-size="' + fs + '" text-anchor="middle" style="fill:var(--proton-muted, #94a3b8)">' + tl + '</text>');
 		}
 
 		// Outage zones (red shaded bands)
@@ -547,7 +549,7 @@ return view.extend({
 			var x1 = getX(Math.max(segs[s][0], tMin));
 			var x2 = getX(Math.min(segs[s][1], tMax));
 			if (x2 - x1 < 2) x2 = x1 + 2;
-			svg.push('<rect x="' + x1.toFixed(1) + '" y="' + pad.top + '" width="' + (x2 - x1).toFixed(1) + '" height="' + chartH + '" fill="rgba(239,68,68,0.14)" />');
+			svg.push('<rect x="' + x1.toFixed(1) + '" y="' + pad.top + '" width="' + (x2 - x1).toFixed(1) + '" height="' + chartH + '" style="fill:var(--proton-danger, rgba(239,68,68,0.14));fill-opacity:0.14" />');
 		}
 
 		// Area fills + lines
@@ -564,19 +566,19 @@ return view.extend({
 			var path = d.join(' ');
 			if (!sr.dashed) {
 				var fillPath = path + ' L' + getX(points[points.length - 1].t).toFixed(1) + ',' + (pad.top + chartH) + ' L' + getX(points[0].t).toFixed(1) + ',' + (pad.top + chartH) + ' Z';
-				svg.push('<path d="' + fillPath + '" fill="' + sr.color + '" fill-opacity="0.07" stroke="none" />');
+				svg.push('<path d="' + fillPath + '" style="fill:' + sr.color + ';fill-opacity:0.07;stroke:none" />');
 			}
 			var attrs = sr.dashed ? ' stroke-dasharray="4,3" stroke-width="1.5"' : ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"';
-			svg.push('<path d="' + path + '" fill="none" stroke="' + sr.color + '"' + attrs + ' />');
-			svg.push('<circle id="dot-' + ch.id + '-' + si + '" cx="-10" cy="-10" r="4" fill="' + sr.color + '" stroke="#fff" stroke-width="1.5" style="display:none" />');
+			svg.push('<path d="' + path + '" style="fill:none;stroke:' + sr.color + '"' + attrs + ' />');
+			svg.push('<circle id="dot-' + ch.id + '-' + si + '" cx="-10" cy="-10" r="4" stroke-width="1.5" style="display:none;fill:' + sr.color + ';stroke:var(--proton-chart-point-ring, #fff)" />');
 		}
 
 		// Axes
-		svg.push('<line x1="' + pad.left + '" y1="' + (pad.top + chartH) + '" x2="' + (pad.left + chartW) + '" y2="' + (pad.top + chartH) + '" stroke="#cbd5e1" stroke-width="1.5" />');
-		svg.push('<line x1="' + pad.left + '" y1="' + pad.top + '" x2="' + pad.left + '" y2="' + (pad.top + chartH) + '" stroke="#cbd5e1" stroke-width="1.5" />');
+		svg.push('<line x1="' + pad.left + '" y1="' + (pad.top + chartH) + '" x2="' + (pad.left + chartW) + '" y2="' + (pad.top + chartH) + '" style="stroke:var(--proton-chart-guide, #cbd5e1)" stroke-width="1.5" />');
+		svg.push('<line x1="' + pad.left + '" y1="' + pad.top + '" x2="' + pad.left + '" y2="' + (pad.top + chartH) + '" style="stroke:var(--proton-chart-guide, #cbd5e1)" stroke-width="1.5" />');
 
 		// Crosshair for tooltip
-		svg.push('<line id="cross-' + ch.id + '" x1="-10" y1="' + pad.top + '" x2="-10" y2="' + (pad.top + chartH) + '" stroke="#334155" stroke-width="1" stroke-dasharray="3,3" style="display:none" />');
+		svg.push('<line id="cross-' + ch.id + '" x1="-10" y1="' + pad.top + '" x2="-10" y2="' + (pad.top + chartH) + '" stroke-width="1" stroke-dasharray="3,3" style="display:none;stroke:var(--proton-fg, #334155)" />');
 
 		svg.push('</svg>');
 		el.innerHTML = svg.join('');
@@ -633,17 +635,17 @@ return view.extend({
 
 		var wide = (ctx.tMax - ctx.tMin) > 2 * 86400;
 		var html = '<div style="font-weight:700;margin-bottom:2px;">' + (wide ? formatDay(p.t) + ' ' + formatHM(p.t) : formatHM(p.t)) + '</div>';
-		html += tipRow('#2563eb', _('Сеть'), fmtNum(p.v, 1) + ' В');
-		html += tipRow('#10b981', _('Выход'), fmtNum(p.vo, 1) + ' В');
-		if (p.vmin > 0) html += tipRow('#f97316', _('Мин. вход'), fmtNum(p.vmin, 1) + ' В');
-		html += tipRow('#10b981', _('Заряд'), fmtNum(p.c, 0) + ' %');
-		html += tipRow('#f59e0b', _('Загрузка'), fmtNum(p.l, 0) + ' %');
-		html += tipRow('#8b5cf6', _('Мощность'), fmtNum(p.p, 1) + ' Вт');
-		if (p.ifq > 0) html += tipRow('#6366f1', _('Частота вх'), fmtNum(p.ifq, 1) + ' Гц');
-		if (p.ofq > 0) html += tipRow('#06b6d4', _('Частота вых'), fmtNum(p.ofq, 1) + ' Гц');
-		if (p.temp > 0) html += tipRow('#e11d48', _('Температура'), fmtNum(p.temp, 1) + ' °C');
-		if (p.bv > 0) html += tipRow('#64748b', _('Батарея'), fmtNum(p.bv, 2) + ' В');
-		html += '<div style="margin-top:2px;font-weight:700;color:' + (p.ob > 0 ? '#f87171' : '#34d399') + ';">' +
+		html += tipRow('var(--proton-accent, #2563eb)', _('Сеть'), fmtNum(p.v, 1) + ' В');
+		html += tipRow('var(--proton-success, #10b981)', _('Выход'), fmtNum(p.vo, 1) + ' В');
+		if (p.vmin > 0) html += tipRow('var(--ups-series-vmin, #f97316)', _('Мин. вход'), fmtNum(p.vmin, 1) + ' В');
+		html += tipRow('var(--proton-success, #10b981)', _('Заряд'), fmtNum(p.c, 0) + ' %');
+		html += tipRow('var(--proton-warning, #f59e0b)', _('Загрузка'), fmtNum(p.l, 0) + ' %');
+		html += tipRow('var(--ups-series-power, #8b5cf6)', _('Мощность'), fmtNum(p.p, 1) + ' Вт');
+		if (p.ifq > 0) html += tipRow('var(--ups-series-ifq, #6366f1)', _('Частота вх'), fmtNum(p.ifq, 1) + ' Гц');
+		if (p.ofq > 0) html += tipRow('var(--ups-series-ofq, #06b6d4)', _('Частота вых'), fmtNum(p.ofq, 1) + ' Гц');
+		if (p.temp > 0) html += tipRow('var(--ups-series-temp, #e11d48)', _('Температура'), fmtNum(p.temp, 1) + ' °C');
+		if (p.bv > 0) html += tipRow('var(--proton-muted, #64748b)', _('Батарея'), fmtNum(p.bv, 2) + ' В');
+		html += '<div style="margin-top:2px;font-weight:700;color:' + (p.ob > 0 ? 'var(--proton-danger, #f87171)' : 'var(--proton-success, #34d399)') + ';">' +
 			(p.ob > 0 ? '⚠️ ' + _('Питание от батареи') : _('Питание от сети')) + '</div>';
 
 		tip.innerHTML = html;

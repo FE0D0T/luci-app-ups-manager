@@ -38,10 +38,10 @@ return view.extend({
 		var container = E('div', { 'class': 'cbi-map ups-manager-ui-exact' });
 
 		var styleNode = E('style', {}, [
-			'.ups-manager-ui-exact { max-width: 1280px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Helvetica Neue", Arial, sans-serif; color: #1e293b; }',
+			'.ups-manager-ui-exact { max-width: 1280px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Helvetica Neue", Arial, sans-serif; color: var(--proton-fg, #1e293b); }',
 			'.dark-mode .ups-manager-ui-exact { color: var(--text-color-highest, #f8fafc); }',
-			'.ups-panel-card { background: var(--background-color-low, #ffffff); border: 1px solid var(--cbi-section-border, #e2e8f0); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }',
-			'.dark-mode .ups-panel-card { background: #1e293b; border-color: var(--text-color-high, #334155); }',
+			'.ups-panel-card { background: var(--proton-card-solid, var(--background-color-low, #ffffff)); border: 1px solid var(--proton-border, var(--cbi-section-border, #e2e8f0)); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: var(--proton-shadow-sm, 0 1px 4px rgba(0,0,0,0.03)); }',
+			'.dark-mode .ups-panel-card { background: var(--proton-card-solid, #1e293b); border-color: var(--proton-border, var(--text-color-high, #334155)); }',
 			'.ups-top-status { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }',
 			'.ups-sub-caption { font-size: 0.75rem; font-weight: 700; color: var(--text-color-medium, #94a3b8); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.4rem; }',
 			'.ups-main-title { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; margin: 0; line-height: 1.2; }',
@@ -50,8 +50,8 @@ return view.extend({
 			'.ups-top-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem; }',
 			'@media (max-width: 900px) { .ups-top-metrics { grid-template-columns: repeat(2, 1fr); } }',
 			'@media (max-width: 500px) { .ups-top-metrics { grid-template-columns: 1fr; } }',
-			'.ups-metric-tile { background: var(--background-color-low, #ffffff); border: 1px solid var(--cbi-section-border, #e2e8f0); border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }',
-			'.dark-mode .ups-metric-tile { background: #1e293b; border-color: var(--text-color-high, #334155); }',
+			'.ups-metric-tile { background: var(--proton-card-solid, var(--background-color-low, #ffffff)); border: 1px solid var(--proton-border, var(--cbi-section-border, #e2e8f0)); border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: var(--proton-shadow-sm, 0 1px 4px rgba(0,0,0,0.03)); display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }',
+			'.dark-mode .ups-metric-tile { background: var(--proton-card-solid, #1e293b); border-color: var(--proton-border, var(--text-color-high, #334155)); }',
 			'.ups-tile-title { font-size: 0.8rem; font-weight: 600; color: var(--text-color-medium, #64748b); margin-bottom: 0.5rem; }',
 			'.dark-mode .ups-tile-title { color: var(--text-color-medium, #94a3b8); }',
 			'.ups-tile-value { font-size: 1.75rem; font-weight: 800; line-height: 1.1; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem; font-variant-numeric: tabular-nums; }',
@@ -61,30 +61,30 @@ return view.extend({
 			'.ups-section-heading { font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; margin: 0 0 1.25rem 0; color: var(--text-color-high, #0f172a); }',
 			'.dark-mode .ups-section-heading { color: var(--text-color-highest, #f8fafc); }',
 			'.ups-table-rows { width: 100%; border-collapse: collapse; }',
-			'.ups-table-rows td { padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }',
-			'.dark-mode .ups-table-rows td { border-bottom-color: var(--text-color-high, #334155); }',
+			'.ups-table-rows td { padding: 0.75rem 0; border-bottom: 1px solid var(--proton-border-light, #f1f5f9); font-size: 0.85rem; }',
+			'.dark-mode .ups-table-rows td { border-bottom-color: var(--proton-border, var(--text-color-high, #334155)); }',
 			'.ups-table-rows tr:last-child td { border-bottom: none; }',
-			'@media (max-width: 600px) { .ups-table-rows tr { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; } .ups-table-rows td { display: block; padding: 0.6rem 0; border-bottom: none !important; } .ups-table-rows tr { border-bottom: 1px solid #f1f5f9; } .dark-mode .ups-table-rows tr { border-bottom-color: var(--text-color-high, #334155); } .ups-table-rows tr:last-child { border-bottom: none; } .ups-label-col { width: auto !important; flex: 1 1 0; min-width: 0; max-width: 62%; overflow-wrap: anywhere; } .ups-val-col { width: auto !important; flex: 0 1 auto; min-width: 0; text-align: right; white-space: normal; overflow-wrap: anywhere; max-width: 38%; } .ups-table-rows { display: block; width: 100%; } .ups-table-rows tbody { display: block; width: 100%; } }',
+			'@media (max-width: 600px) { .ups-table-rows tr { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; } .ups-table-rows td { display: block; padding: 0.6rem 0; border-bottom: none !important; } .ups-table-rows tr { border-bottom: 1px solid var(--proton-border-light, #f1f5f9); } .dark-mode .ups-table-rows tr { border-bottom-color: var(--proton-border, var(--text-color-high, #334155)); } .ups-table-rows tr:last-child { border-bottom: none; } .ups-label-col { width: auto !important; flex: 1 1 0; min-width: 0; max-width: 62%; overflow-wrap: anywhere; } .ups-val-col { width: auto !important; flex: 0 1 auto; min-width: 0; text-align: right; white-space: normal; overflow-wrap: anywhere; max-width: 38%; } .ups-table-rows { display: block; width: 100%; } .ups-table-rows tbody { display: block; width: 100%; } }',
 			'.ups-label-col { color: var(--text-color-high, #475569); width: 45%; }',
 			'.dark-mode .ups-label-col { color: var(--text-color-medium, #94a3b8); }',
 			'.ups-val-col { text-align: right; font-weight: 600; color: var(--text-color-high, #0f172a); font-variant-numeric: tabular-nums; width: 55%; }',
 			'.dark-mode .ups-val-col { color: var(--text-color-highest, #f8fafc); }',
 			'.ups-badge-pill { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }',
-			'.badge-green { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }',
-			'.dark-mode .badge-green { background: rgba(5,150,105,0.2); color: #34d399; border-color: rgba(5,150,105,0.4); }',
-			'.badge-blue { background: rgba(59,130,246,0.18); color: #2563eb; border: 1px solid #bfdbfe; }',
-			'.dark-mode .badge-blue { background: rgba(37,99,235,0.2); color: #60a5fa; border-color: rgba(37,99,235,0.4); }',
-			'.badge-gray { background: var(--background-color-low, #f8fafc); color: var(--text-color-medium, #64748b); border: 1px solid var(--border-color-high, #e2e8f0); }',
-			'.dark-mode .badge-gray { background: #334155; color: var(--text-color-medium, #94a3b8); border-color: var(--text-color-high, #475569); }',
-			'.badge-red { background: rgba(239,68,68,0.18); color: #dc2626; border: 1px solid #fecaca; }',
-			'.dark-mode .badge-red { background: rgba(220,38,38,0.2); color: #f87171; border-color: rgba(220,38,38,0.4); }',
+			'.badge-green { background: var(--proton-bg-secondary, #ecfdf5); color: var(--proton-success, #059669); border: 1px solid var(--proton-border, #a7f3d0); }',
+			'.dark-mode .badge-green { background: rgba(5,150,105,0.2); color: var(--proton-success, #34d399); border-color: rgba(5,150,105,0.4); }',
+			'.badge-blue { background: var(--proton-accent-glow, rgba(59,130,246,0.18)); color: var(--proton-accent, #2563eb); border: 1px solid var(--proton-border, #bfdbfe); }',
+			'.dark-mode .badge-blue { background: var(--proton-accent-glow, rgba(37,99,235,0.2)); color: var(--proton-accent, #60a5fa); border-color: rgba(37,99,235,0.4); }',
+			'.badge-gray { background: var(--proton-bg-secondary, var(--background-color-low, #f8fafc)); color: var(--text-color-medium, #64748b); border: 1px solid var(--proton-border, var(--border-color-high, #e2e8f0)); }',
+			'.dark-mode .badge-gray { background: var(--proton-bg-hover, #334155); color: var(--text-color-medium, #94a3b8); border-color: var(--proton-border, var(--text-color-high, #475569)); }',
+			'.badge-red { background: rgba(239,68,68,0.18); color: var(--proton-danger, #dc2626); border: 1px solid var(--proton-border, #fecaca); }',
+			'.dark-mode .badge-red { background: rgba(220,38,38,0.2); color: var(--proton-danger, #f87171); border-color: rgba(220,38,38,0.4); }',
 			'.ups-progress-wrap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 600; }',
-			'.ups-progress-bar { width: 100%; height: 12px; background: var(--background-color-low, #f1f5f9); border: 1px solid var(--text-color-medium, #94a3b8); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem; box-sizing: border-box; }',
-			'.dark-mode .ups-progress-bar { background: #334155; }',
-			'.ups-progress-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease, background-color 0.4s ease; } .ups-progress-fill.lvl-high { background: #10b981; } .ups-progress-fill.lvl-mid { background: #f59e0b; } .ups-progress-fill.lvl-low { background: #ef4444; }',
-			'.ups-btn-refresh { background: var(--background-color-low, #f8fafc); border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.4rem 0.85rem; font-size: 0.85rem; font-weight: 600; color: var(--text-color-high, #334155); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }',
-			'.ups-btn-refresh:hover { background: rgba(148,163,184,0.35); }',
-			'.dark-mode .ups-btn-refresh { background: #334155; border-color: var(--text-color-high, #475569); color: var(--text-color-highest, #f8fafc); }'
+			'.ups-progress-bar { width: 100%; height: 12px; background: var(--proton-bg-secondary, var(--background-color-low, #f1f5f9)); border: 1px solid var(--proton-border, var(--text-color-medium, #94a3b8)); border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem; box-sizing: border-box; }',
+			'.dark-mode .ups-progress-bar { background: var(--proton-bg-hover, #334155); }',
+			'.ups-progress-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease, background-color 0.4s ease; } .ups-progress-fill.lvl-high { background: var(--proton-success, #10b981); } .ups-progress-fill.lvl-mid { background: var(--proton-warning, #f59e0b); } .ups-progress-fill.lvl-low { background: var(--proton-danger, #ef4444); }',
+			'.ups-btn-refresh { background: var(--proton-bg-secondary, var(--background-color-low, #f8fafc)); border: 1px solid var(--proton-border, #cbd5e1); border-radius: 8px; padding: 0.4rem 0.85rem; font-size: 0.85rem; font-weight: 600; color: var(--text-color-high, #334155); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }',
+			'.ups-btn-refresh:hover { background: var(--proton-bg-hover, rgba(148,163,184,0.35)); }',
+			'.dark-mode .ups-btn-refresh { background: var(--proton-bg-hover, #334155); border-color: var(--proton-border, var(--text-color-high, #475569)); color: var(--text-color-highest, #f8fafc); }'
 		]);
 
 		// 1. Top Status Banner Card
@@ -124,25 +124,25 @@ return view.extend({
 		var isLowBattery = status && status.connected && status.is_low_battery;
 		var isConnected = status && status.connected;
 
-		var iconColor = '#ef4444';
+		var iconColor = 'var(--proton-danger, #ef4444)';
 		var titleText = 'Офлайн / устройство отключено';
 		var descText = 'Онлайн-ИБП не обнаружен (тайм-аут прямого USB-подключения к плате или драйвер NUT не запущен)';
 
 		if (isConnected) {
 			if (isLowBattery) {
-				iconColor = '#dc2626';
+				iconColor = 'var(--proton-danger, #dc2626)';
 				titleText = 'Критическое предупреждение / батарея сильно разряжена';
 				descText = 'ИБП работает от батареи, и заряд ниже порога защитного выключения. Немедленно сохраните данные!';
 			} else if (isOnBattery) {
-				iconColor = '#d97706';
+				iconColor = 'var(--proton-warning, #d97706)';
 				titleText = 'Внимание / сеть отключена (питание от батареи)';
 				descText = 'Питание от сети прервано, ИБП мгновенно перешёл на встроенный инвертор.';
 			} else if (isOnline) {
-				iconColor = '#10b981';
+				iconColor = 'var(--proton-success, #10b981)';
 				titleText = 'Норма / питание от сети';
 				descText = 'Связь с ИБП в норме, качество сети стабильно, подключённые устройства защищены от скачков и перепадов напряжения.';
 			} else {
-				iconColor = '#3b82f6';
+				iconColor = 'var(--proton-accent, #3b82f6)';
 				titleText = 'Готов / режим ожидания';
 				descText = 'Связь с оборудованием ИБП в норме:' + (status.status || 'READY');
 			}
@@ -185,27 +185,27 @@ return view.extend({
 
 		// 1. 供电状态
 		var pwrStateText = 'Офлайн, не подключён';
-		var pwrStateColor = '#ef4444';
+		var pwrStateColor = 'var(--proton-danger, #ef4444)';
 		var pwrSubText = 'OFFLINE';
 		if (isConnected) {
 			if (isBattery) {
 				pwrStateText = 'Работа от батареи';
-				pwrStateColor = '#d97706';
+				pwrStateColor = 'var(--proton-warning, #d97706)';
 				pwrSubText = 'ON BATTERY';
 			} else if (isOnline) {
 				pwrStateText = 'Питание от сети';
-				pwrStateColor = '#10b981';
+				pwrStateColor = 'var(--proton-success, #10b981)';
 				pwrSubText = 'ONLINE';
 			} else {
 				pwrStateText = status.status || 'Готов';
-				pwrStateColor = '#3b82f6';
+				pwrStateColor = 'var(--proton-accent, #3b82f6)';
 				pwrSubText = 'STANDBY';
 			}
 		}
 
 		// 2. 电池电量
 		var chargeVal = (isConnected && (status.battery_charge_calc !== null && status.battery_charge_calc !== undefined)) ? status.battery_charge_calc : ((isConnected && status.battery_charge !== null) ? status.battery_charge : 0);
-		var chargeColor = chargeVal <= 20 ? '#ef4444' : (chargeVal <= 50 ? '#d97706' : '#2563eb');
+		var chargeColor = chargeVal <= 20 ? 'var(--proton-danger, #ef4444)' : (chargeVal <= 50 ? 'var(--proton-warning, #d97706)' : 'var(--proton-accent, #2563eb)');
 
 		// 3. 预计续航
 		var runtimeText = (isConnected && status.battery_runtime) ? formatRuntimeMinutes(status.battery_runtime) : ((isConnected && status.battery_runtime_est) ? formatRuntimeMinutes(status.battery_runtime_est) : '-- мин');
@@ -241,7 +241,7 @@ return view.extend({
 			// Metric 4
 			E('div', { 'class': 'ups-metric-tile' }, [
 				E('div', { 'class': 'ups-tile-title' }, _('Загрузка')),
-				E('div', { 'class': 'ups-tile-value', 'style': 'color:#d97706;' }, loadVal + '%'),
+				E('div', { 'class': 'ups-tile-value', 'style': 'color:var(--proton-warning, #d97706);' }, loadVal + '%'),
 				E('p', { 'class': 'ups-tile-source' }, _('Текущая нагрузка ИБП'))
 			])
 		];
@@ -286,7 +286,7 @@ return view.extend({
 				]),
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Общее напряжение батареи')),
-					E('td', { 'class': 'ups-val-col', 'style': 'color:#2563eb;' }, battV)
+					E('td', { 'class': 'ups-val-col', 'style': 'color:var(--proton-accent, #2563eb);' }, battV)
 				]),
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Выходная мощность (активная/полная)')),
@@ -298,11 +298,11 @@ return view.extend({
 				]),
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Скорость вентилятора охлаждения')),
-					E('td', { 'class': 'ups-val-col', 'style': 'color:#2563eb;' }, '⚡ ' + _('Бесшумное охлаждение без вентилятора'))
+					E('td', { 'class': 'ups-val-col', 'style': 'color:var(--proton-accent, #2563eb);' }, '⚡ ' + _('Бесшумное охлаждение без вентилятора'))
 				]),
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Способ связи и сбора данных')),
-					E('td', { 'class': 'ups-val-col', 'style': 'color:' + (isConnected ? '#059669' : '#dc2626') + ';font-size:0.8rem;' }, usbDesc)
+					E('td', { 'class': 'ups-val-col', 'style': 'color:' + (isConnected ? 'var(--proton-success, #059669)' : 'var(--proton-danger, #dc2626)') + ';font-size:0.8rem;' }, usbDesc)
 				])
 			])
 		];
@@ -318,7 +318,7 @@ return view.extend({
 		var invBadge = isConnected ? E('span', { 'class': 'ups-badge-pill badge-green' }, _('Онлайн')) : E('span', { 'class': 'ups-badge-pill badge-gray' }, _('Офлайн'));
 		var chgText = isOnline ? 'Подзаряд (поддержание)' : (isBattery ? 'Разряд' : 'Офлайн');
 		var busV = (isConnected && status.output_voltage) ? (Math.round(status.output_voltage * 1.414) + ' V DC') : '0 V DC';
-		var synText = isOnline ? E('span', { 'style': 'color:#059669;font-weight:600;' }, _('Синхронизировано')) : E('span', { 'style': 'color:#2563eb;font-weight:600;' }, _('Не синхронизировано'));
+		var synText = isOnline ? E('span', { 'style': 'color:var(--proton-success, #059669);font-weight:600;' }, _('Синхронизировано')) : E('span', { 'style': 'color:var(--proton-accent, #2563eb);font-weight:600;' }, _('Не синхронизировано'));
 
 		return [
 			E('h3', { 'class': 'ups-section-heading' }, ['⚡ ', _('Топология и путь питания (ECO / байпас / инвертор)')]),

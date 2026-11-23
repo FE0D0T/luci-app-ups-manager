@@ -98,12 +98,12 @@ return view.extend({
 					var d = devices[i];
 					var isMatch = d.is_ups === 1;
 					listNodes.push(E('div', {
-						'style': 'padding:0.85rem;border:1px solid ' + (isMatch ? '#10b981' : 'var(--border-color-high, #cbd5e1)') + ';background:' + (isMatch ? 'rgba(16,185,129,0.08)' : 'var(--background-color-low, #ffffff)') + ';border-radius:0.5rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;'
+						'style': 'padding:0.85rem;border:1px solid ' + (isMatch ? 'var(--proton-success, #10b981)' : 'var(--border-color-high, #cbd5e1)') + ';background:' + (isMatch ? 'var(--proton-bg-secondary, rgba(16,185,129,0.08))' : 'var(--proton-card-solid, var(--background-color-low, #ffffff))') + ';border-radius:0.5rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;'
 					}, [
 						E('div', {}, [
 							E('div', { 'style': 'font-weight:700;font-size:0.95rem;' }, [
 								(d.manufacturer ? d.manufacturer + ' — ' : '') + (d.product || _('Неизвестное устройство шины')),
-								isMatch ? E('span', { 'style': 'background:rgba(16,185,129,0.22);color:var(--text-color-highest, #15803d);padding:2px 8px;border-radius:4px;font-size:0.75rem;margin-left:8px;' }, '✓ ' + _('Совпадает с сигнатурой ИБП')) : ''
+								isMatch ? E('span', { 'style': 'background:var(--proton-bg-secondary, rgba(16,185,129,0.22));color:var(--proton-success, #15803d);padding:2px 8px;border-radius:4px;font-size:0.75rem;margin-left:8px;' }, '✓ ' + _('Совпадает с сигнатурой ИБП')) : ''
 							]),
 							E('div', { 'style': 'color:var(--text-color-medium, #64748b);font-size:0.8rem;font-family:monospace;margin-top:0.25rem;' }, [
 								'VID: ' + (d.vid || 'N/A') + ' | PID: ' + (d.pid || 'N/A') + (d.serial ? ' | S/N: ' + d.serial : '') + ' | Рекомендуемый драйвер: ' + d.recommended_driver

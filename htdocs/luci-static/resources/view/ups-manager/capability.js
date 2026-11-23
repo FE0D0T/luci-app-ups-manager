@@ -105,7 +105,7 @@ return view.extend({
 		if (!res || !res.success || !res.fields) {
 			return [
 				E('tr', {}, [
-					E('td', { 'colspan': '5', 'style': 'text-align:center;color:#ef4444;padding:2rem;' },
+					E('td', { 'colspan': '5', 'style': 'text-align:center;color:var(--proton-danger, #ef4444);padding:2rem;' },
 						_('Не удалось прочитать исходные поля ИБП, причина: ') + (res ? res.error : _('связь не готова'))
 					)
 				])
@@ -139,7 +139,7 @@ return view.extend({
 
 			rows.push(E('tr', { 'class': 'tr cbi-section-table-row' }, [
 				E('td', { 'class': 'td', 'style': 'font-family:monospace;font-weight:600;' }, k),
-				E('td', { 'class': 'td', 'style': 'font-family:monospace;color:#2563eb;' }, v),
+				E('td', { 'class': 'td', 'style': 'font-family:monospace;color:var(--proton-accent, #2563eb);' }, v),
 				E('td', { 'class': 'td' }, [
 					meta.label,
 					meta.unit ? E('span', { 'style': 'color:var(--text-color-medium, #64748b);margin-left:4px;' }, '(' + meta.unit + ')') : ''
