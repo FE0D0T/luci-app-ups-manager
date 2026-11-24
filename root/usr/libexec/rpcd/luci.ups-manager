@@ -253,6 +253,7 @@ get_status() {
 	local status_val battery_charge battery_runtime battery_voltage
 	local input_voltage input_freq output_voltage output_freq
 	local ups_load ups_temp ups_model ups_mfr ups_realpower
+	local ups_bus_v ups_fan
 
 	status_val=$(echo "$raw" | awk -F': ' '$1=="ups.status"{print $2}')
 	battery_charge=$(echo "$raw" | awk -F': ' '$1=="battery.charge"{print $2}')
@@ -274,6 +275,8 @@ get_status() {
 		battery_charge_calc=$(awk "BEGIN { v = $battery_voltage; lo = $v_lo; hi = $v_hi; if (hi <= lo) exit; p = int(100 * (v - lo) / (hi - lo) + 0.5); if (p > 100) p = 100; if (p < 0) p = 0; printf \"%d\", p }" 2>/dev/null)
 	fi
 	ups_temp=$(echo "$raw" | awk -F': ' '$1=="ups.temperature"{print $2}')
+	ups_bus_v=$(echo "$raw" | awk -F': ' '$1=="ups.bus.voltage"{print $2}')
+	ups_fan=$(echo "$raw" | awk -F': ' '$1=="ups.fan.speed"{print $2}')
 	# Оценка времени работы, если драйвер не отдаёт battery.runtime
 	local runtime_est=""
 	if [ -z "$battery_runtime" ] && [ -n "$battery_charge" ] && [ -n "$ups_load" ]; then
@@ -397,6 +400,8 @@ get_status() {
 	"power_source": "$(json_escape "$power_source")",
 	"nominal_power": ${nominal_power:-null},
 	"temperature": ${ups_temp:-null},
+	"bus_voltage": ${ups_bus_v:-null},
+	"fan_speed": ${ups_fan:-null},
 	"model": "$(json_escape "$ups_model")",
 	"manufacturer": "$(json_escape "$ups_mfr")",
 	"vendorid": "$(json_escape "$ups_vid")",

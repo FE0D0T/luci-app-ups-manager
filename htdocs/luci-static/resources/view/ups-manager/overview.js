@@ -84,7 +84,18 @@ return view.extend({
 			'.ups-progress-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease, background-color 0.4s ease; } .ups-progress-fill.lvl-high { background: var(--proton-success, #10b981); } .ups-progress-fill.lvl-mid { background: var(--proton-warning, #f59e0b); } .ups-progress-fill.lvl-low { background: var(--proton-danger, #ef4444); }',
 			'.ups-btn-refresh { background: var(--proton-bg-secondary, var(--background-color-low, #f8fafc)); border: 1px solid var(--proton-border, #cbd5e1); border-radius: 8px; padding: 0.4rem 0.85rem; font-size: 0.85rem; font-weight: 600; color: var(--text-color-high, #334155); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }',
 			'.ups-btn-refresh:hover { background: var(--proton-bg-hover, rgba(148,163,184,0.35)); }',
-			'.dark-mode .ups-btn-refresh { background: var(--proton-bg-hover, #334155); border-color: var(--proton-border, var(--text-color-high, #475569)); color: var(--text-color-highest, #f8fafc); }'
+			'.dark-mode .ups-btn-refresh { background: var(--proton-bg-hover, #334155); border-color: var(--proton-border, var(--text-color-high, #475569)); color: var(--text-color-highest, #f8fafc); }',
+			'.ups-batt-shell { position: relative; width: 100%; max-width: 280px; height: 64px; margin: 0.75rem auto 1rem; border: 2px solid rgba(255,255,255,0.28); border-radius: 10px; background: var(--proton-bg-secondary, var(--background-color-low, #e2e8f0)); box-sizing: border-box; }',
+			'.ups-batt-shell::after { content: ""; position: absolute; right: -8px; top: 22%; height: 56%; width: 6px; border-radius: 3px; background: rgba(255,255,255,0.28); }',
+			'.light-mode .ups-batt-shell, .ups-batt-shell { border-color: var(--proton-border, #cbd5e1); } .ups-batt-shell::after { background: var(--proton-border, #cbd5e1); }',
+			'.ups-batt-fill { height: 100%; border-radius: 8px; transition: width 0.7s ease, background 0.7s ease; }',
+			'.ups-batt-fill.lvl-green { background: linear-gradient(90deg, #16a34a, #22c55e); }',
+			'.ups-batt-fill.lvl-yellow { background: linear-gradient(90deg, #ca8a04, #eab308); }',
+			'.ups-batt-fill.lvl-orange { background: linear-gradient(90deg, #ea580c, #f97316); }',
+			'.ups-batt-fill.lvl-red { background: linear-gradient(90deg, #dc2626, #ef4444); }',
+			'.ups-batt-label { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); text-align: center; font-size: 22px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.75); pointer-events: none; }',
+			'.ups-batt-compact { width: calc(100% - 10px); max-width: none; height: 36px; margin: 8px 0 6px 0; }',
+			'.ups-batt-compact .ups-batt-label { font-size: 18px; }'
 		]);
 
 		// 1. Top Status Banner Card
@@ -212,6 +223,10 @@ return view.extend({
 
 		// 4. 负载占比
 		var loadVal = (isConnected && status.load_percent !== null) ? status.load_percent : 0;
+		var loadColor = loadVal >= 85 ? '#ef4444' : (loadVal >= 65 ? '#f97316' : (loadVal >= 40 ? '#eab308' : '#22c55e'));
+		var loadSub = (isConnected && status.nominal_power && status.power !== null && status.power !== undefined) ? (Math.round(status.power) + ' Вт из ' + Math.round(status.nominal_power) + ' Вт') : _('Текущая нагрузка ИБП');
+
+		var battCls = chargeVal >= 60 ? 'lvl-green' : (chargeVal >= 35 ? 'lvl-yellow' : (chargeVal >= 20 ? 'lvl-orange' : 'lvl-red'));
 
 		return [
 			// Metric 1
@@ -227,8 +242,11 @@ return view.extend({
 			// Metric 2
 			E('div', { 'class': 'ups-metric-tile' }, [
 				E('div', { 'class': 'ups-tile-title' }, _('Заряд батареи')),
-				E('div', { 'class': 'ups-tile-value', 'style': 'color:' + chargeColor + ';' }, chargeVal + '%'),
-				E('p', { 'class': 'ups-tile-source' }, _('Источник: battery.charge'))
+				E('div', { 'class': 'ups-batt-shell ups-batt-compact' }, [
+					E('div', { 'class': 'ups-batt-fill ' + battCls, 'style': 'width:' + chargeVal + '%;' }),
+					E('div', { 'class': 'ups-batt-label' }, [ (chargeVal < 100 && isOnline) ? '⚡ ' : '', chargeVal + '%' ])
+				]),
+				E('p', { 'class': 'ups-tile-source' }, (isConnected && status.battery_voltage) ? (status.battery_voltage + ' V · battery.charge') : _('Источник: battery.charge'))
 			]),
 
 			// Metric 3
@@ -241,8 +259,8 @@ return view.extend({
 			// Metric 4
 			E('div', { 'class': 'ups-metric-tile' }, [
 				E('div', { 'class': 'ups-tile-title' }, _('Загрузка')),
-				E('div', { 'class': 'ups-tile-value', 'style': 'color:var(--proton-warning, #d97706);' }, loadVal + '%'),
-				E('p', { 'class': 'ups-tile-source' }, _('Текущая нагрузка ИБП'))
+				E('div', { 'class': 'ups-tile-value', 'style': 'color:' + loadColor + ';' }, loadVal + '%'),
+				E('p', { 'class': 'ups-tile-source' }, loadSub)
 			])
 		];
 	},
@@ -260,7 +278,7 @@ return view.extend({
 		var vaEst = Math.round(powerW / 0.6);
 
 		var freq = (isConnected && status.input_freq) ? status.input_freq : '0.0';
-		var temp = (isConnected && status.temperature) ? status.temperature : '0.0';
+		var tempReal = (isConnected && status.temperature !== null && status.temperature !== undefined && parseFloat(status.temperature) > 0);
 
 		var usbDesc = isConnected ?
 			('Прямая связь USB-HID с платой (VendorId: ' + (status.vendorid || '0764') + ' ProductId: ' + (status.productid || '0501') + ') - 🟢 онлайн') :
@@ -268,13 +286,6 @@ return view.extend({
 
 		return [
 			E('h3', { 'class': 'ups-section-heading' }, ['🔋 ', _('Ёмкость батареи и состояние заряда/разряда')]),
-			E('div', { 'class': 'ups-progress-wrap' }, [
-				E('span', { 'style': 'color:var(--text-color-high, #0f172a);font-weight:600;' }, _('Остаток в процентах')),
-				E('span', { 'style': 'color:var(--text-color-highest, #0f172a);font-weight:700;' }, chargeVal + '%')
-			]),
-			E('div', { 'class': 'ups-progress-bar' }, [
-				E('div', { 'class': 'ups-progress-fill ' + (chargeVal <= 20 ? 'lvl-low' : (chargeVal <= 50 ? 'lvl-mid' : 'lvl-high')), 'style': 'width:' + chargeVal + '%;' })
-			]),
 			E('table', { 'class': 'ups-table-rows' }, [
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Входное напряжение сети')),
@@ -293,12 +304,12 @@ return view.extend({
 					E('td', { 'class': 'ups-val-col' }, powerW + ' W / ' + vaEst + ' VA (' + loadPct + '%)')
 				]),
 				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Частота сети / внутренняя температура')),
-					E('td', { 'class': 'ups-val-col' }, freq + ' Hz · ' + temp + ' °C')
+					E('td', { 'class': 'ups-label-col' }, tempReal ? _('Частота сети / внутренняя температура') : _('Частота сети')),
+					E('td', { 'class': 'ups-val-col' }, freq + ' Hz' + (tempReal ? ' · ' + status.temperature + ' °C' : ''))
 				]),
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Скорость вентилятора охлаждения')),
-					E('td', { 'class': 'ups-val-col', 'style': 'color:var(--proton-accent, #2563eb);' }, '⚡ ' + _('Бесшумное охлаждение без вентилятора'))
+					E('td', { 'class': 'ups-val-col', 'style': 'color:var(--proton-accent, #2563eb);' }, (isConnected && status.fan_speed !== null && status.fan_speed !== undefined && parseFloat(status.fan_speed) > 0) ? (status.fan_speed + ' RPM') : ('⚡ ' + _('Бесшумное охлаждение без вентилятора')))
 				]),
 				E('tr', {}, [
 					E('td', { 'class': 'ups-label-col' }, _('Способ связи и сбора данных')),
@@ -317,37 +328,55 @@ return view.extend({
 		var bypassBadge = isOnline ? E('span', { 'class': 'ups-badge-pill badge-green' }, _('Готов')) : E('span', { 'class': 'ups-badge-pill badge-gray' }, _('Офлайн'));
 		var invBadge = isConnected ? E('span', { 'class': 'ups-badge-pill badge-green' }, _('Онлайн')) : E('span', { 'class': 'ups-badge-pill badge-gray' }, _('Офлайн'));
 		var chgText = isOnline ? 'Подзаряд (поддержание)' : (isBattery ? 'Разряд' : 'Офлайн');
-		var busV = (isConnected && status.output_voltage) ? (Math.round(status.output_voltage * 1.414) + ' V DC') : '0 V DC';
+		var busReal = (isConnected && status.bus_voltage !== null && status.bus_voltage !== undefined && parseFloat(status.bus_voltage) > 0);
+		var statusStr = ' ' + ((status && status.status) ? status.status : '') + ' ';
+		var avrText, avrStyle;
+		if (isBattery) { avrText = _('Не используется (работа от батареи)'); avrStyle = 'color:var(--proton-accent, #2563eb);'; }
+		else if (statusStr.indexOf(' TRIM ') >= 0) { avrText = _('Понижение напряжения (TRIM)'); avrStyle = 'color:var(--proton-warning, #d97706);font-weight:600;'; }
+		else if (statusStr.indexOf(' BOOST ') >= 0) { avrText = _('Повышение напряжения (BOOST)'); avrStyle = 'color:var(--proton-warning, #d97706);font-weight:600;'; }
+		else if (isOnline) { avrText = _('Прямой проход (Норма)'); avrStyle = 'color:var(--proton-success, #059669);font-weight:600;'; }
+		else { avrText = _('Офлайн'); avrStyle = 'color:var(--text-color-medium, #64748b);'; }
 		var synText = isOnline ? E('span', { 'style': 'color:var(--proton-success, #059669);font-weight:600;' }, _('Синхронизировано')) : E('span', { 'style': 'color:var(--proton-accent, #2563eb);font-weight:600;' }, _('Не синхронизировано'));
+
+		var rows = [
+			E('tr', {}, [
+				E('td', { 'class': 'ups-label-col' }, _('Режим энергосбережения ECO')),
+				E('td', { 'class': 'ups-val-col' }, ecoText)
+			]),
+			E('tr', {}, [
+				E('td', { 'class': 'ups-label-col' }, _('Статический байпас (Bypass)')),
+				E('td', { 'class': 'ups-val-col' }, [bypassBadge])
+			]),
+			E('tr', {}, [
+				E('td', { 'class': 'ups-label-col' }, _('Состояние инвертора')),
+				E('td', { 'class': 'ups-val-col' }, [invBadge])
+			]),
+			E('tr', {}, [
+				E('td', { 'class': 'ups-label-col' }, _('Состояние выпрямителя и зарядки')),
+				E('td', { 'class': 'ups-val-col' }, chgText)
+			])
+		];
+
+		if (busReal) {
+			rows.push(E('tr', {}, [
+				E('td', { 'class': 'ups-label-col' }, _('Высокое напряжение шины постоянного тока (Bus)')),
+				E('td', { 'class': 'ups-val-col' }, status.bus_voltage + ' V DC')
+			]));
+		}
+
+		rows.push(E('tr', {}, [
+			E('td', { 'class': 'ups-label-col' }, _('Стабилизатор напряжения (AVR)')),
+			E('td', { 'class': 'ups-val-col', 'style': avrStyle }, avrText)
+		]));
+
+		rows.push(E('tr', {}, [
+			E('td', { 'class': 'ups-label-col' }, _('Синхронизация с сетью (PLL)')),
+			E('td', { 'class': 'ups-val-col' }, [synText])
+		]));
 
 		return [
 			E('h3', { 'class': 'ups-section-heading' }, ['⚡ ', _('Топология и путь питания (ECO / байпас / инвертор)')]),
-			E('table', { 'class': 'ups-table-rows', 'style': 'margin-top:1.6rem;' }, [
-				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Режим энергосбережения ECO')),
-					E('td', { 'class': 'ups-val-col' }, ecoText)
-				]),
-				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Статический байпас (Bypass)')),
-					E('td', { 'class': 'ups-val-col' }, [bypassBadge])
-				]),
-				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Состояние инвертора')),
-					E('td', { 'class': 'ups-val-col' }, [invBadge])
-				]),
-				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Состояние выпрямителя и зарядки')),
-					E('td', { 'class': 'ups-val-col' }, chgText)
-				]),
-				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Высокое напряжение шины постоянного тока (Bus)')),
-					E('td', { 'class': 'ups-val-col' }, busV)
-				]),
-				E('tr', {}, [
-					E('td', { 'class': 'ups-label-col' }, _('Синхронизация с сетью (PLL)')),
-					E('td', { 'class': 'ups-val-col' }, [synText])
-				])
-			])
+			E('table', { 'class': 'ups-table-rows', 'style': 'margin-top:1.6rem;' }, rows)
 		];
 	},
 
