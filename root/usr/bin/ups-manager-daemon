@@ -85,13 +85,16 @@ log_event() {
 trap 'log_event INFO "Daemon stopping..."; rm -f /tmp/run/ups-manager.pid; exit 0' INT TERM
 
 echo $$ > /tmp/run/ups-manager.pid
-log_event INFO "UPS Manager daemon v1.0.6 started."
+log_event INFO "UPS Manager daemon v1.0.11 started."
 [ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "ops" "info" "Запуск демона UPS" "Фоновый сборщик данных UPS Manager запущен и работает."
 
 PREV_ONLINE=1
 PREV_ON_BATTERY=0
 PREV_LOW_BATTERY=0
 ON_BATTERY_START_TS=0
+# Таймерная модель (аналог upssched START/CANCEL): SHUTDOWN_ETS — абсолютное время срабатывания, FAST_POLL — ускоренный опрос
+SHUTDOWN_ETS=0
+FAST_POLL=0
 LAST_FLUSH_TS=$(date +%s)
 LAST_MIN_TS=$(date +%s)
 # Накопление энергии (Wh): сутки и месяц, сброс по смене даты/месяца
@@ -143,6 +146,15 @@ while true; do
 		S_BYPASS=$(uci_get "${CONF}.quality.status_bypass_sev" "warning")
 		S_RB=$(uci_get "${CONF}.quality.status_replace_batt_sev" "warning")
 		S_FAIL=$(uci_get "${CONF}.quality.status_selftest_fail_sev" "warning")
+		S_TRIM=$(uci_get "${CONF}.quality.status_trim_sev" "info")
+		S_BOOST=$(uci_get "${CONF}.quality.status_boost_sev" "info")
+		S_CAL=$(uci_get "${CONF}.quality.status_cal_sev" "warning")
+		S_TEST=$(uci_get "${CONF}.quality.status_test_sev" "info")
+		S_ALARM=$(uci_get "${CONF}.quality.status_alarm_sev" "critical")
+		S_ECO=$(uci_get "${CONF}.quality.status_eco_sev" "info")
+		S_OFF=$(uci_get "${CONF}.quality.status_off_sev" "critical")
+		OB_GRACE=$(uci_get "${CONF}.shutdown.ob_grace" "10")
+		[ "$OB_GRACE" -ge 0 ] 2>/dev/null || OB_GRACE=10
 		USER_NOM_POWER=$(uci_get "${CONF}.ups.nominal_power" "")
 		POWER_SCALE=$(uci_get "${CONF}.ups.power_scale" "1.0")
 		UCI_READY=1
@@ -212,6 +224,15 @@ EOF
 	case "$STATUS_VAL" in *OL*) IS_OL=1 ;; esac
 	case "$STATUS_VAL" in *OB*) IS_OB=1 ;; esac
 	case "$STATUS_VAL" in *LB*) IS_LB=1 ;; esac
+	# Новые флаги NUT: точное пословное совпадение (обрамление пробелами: OFF не совпадёт с OFFLINE)
+	P_TRIM=0; P_BOOST=0; P_CAL=0; P_TEST=0; P_ALARM=0; P_ECO=0; P_OFF=0
+	case " $STATUS_VAL " in *" TRIM "*) P_TRIM=1 ;; esac
+	case " $STATUS_VAL " in *" BOOST "*) P_BOOST=1 ;; esac
+	case " $STATUS_VAL " in *" CAL "*) P_CAL=1 ;; esac
+	case " $STATUS_VAL " in *" TEST "*) P_TEST=1 ;; esac
+	case " $STATUS_VAL " in *" ALARM "*) P_ALARM=1 ;; esac
+	case " $STATUS_VAL " in *" ECO "*) P_ECO=1 ;; esac
+	case " $STATUS_VAL " in *" OFF "*) P_OFF=1 ;; esac
 
 	# Universal Multi-Tier Power Calculation Engine
 	HW_VOLTAGE="$OUTPUT_V"
@@ -305,6 +326,14 @@ EOF
 	# Power grid event detection & debounce
 	if [ $IS_OB -eq 1 ] && [ $PREV_ON_BATTERY -eq 0 ]; then
 		ON_BATTERY_START_TS=$NOW
+		# START-TIMER (аналог upssched): запуск таймера выключения, ускорение опроса до 1 с
+		DELAY_THRESHOLD=$(uci_get "${CONF}.shutdown.on_battery_delay" "600")
+		if [ "$DELAY_THRESHOLD" -gt 0 ] 2>/dev/null; then
+			SHUTDOWN_ETS=$((NOW + DELAY_THRESHOLD))
+		else
+			SHUTDOWN_ETS=0
+		fi
+		FAST_POLL=1
 		log_event WARN "Power outage detected! Switched to battery power (Charge: ${CHARGE}%, Runtime: ${RUNTIME}s)."
 		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "warn" "⚠️ Тревога: сеть отключена, переход на питание от батареи!" "Обнаружено отключение сети переменного тока (входное напряжение ${INPUT_V:-0.0} В). ИБП перешёл на питание от батареи (выход ${OUTPUT_V:-220.0} В, нагрузка ${LOAD_PCT:-0}%, заряд батареи ${CHARGE:-100}%)."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
@@ -314,6 +343,9 @@ EOF
 	elif [ $IS_OB -eq 0 ] && [ $PREV_ON_BATTERY -eq 1 ]; then
 		outage_sec=$((NOW - ON_BATTERY_START_TS))
 		ON_BATTERY_START_TS=0
+		# CANCEL-TIMER (аналог upssched): отмена таймера выключения, возврат к обычному опросу
+		SHUTDOWN_ETS=0
+		FAST_POLL=0
 		log_event INFO "Mains power restored after ${outage_sec}s. Running on line power."
 		[ -x "$LOG_SCRIPT" ] && "$LOG_SCRIPT" ops "power" "success" "⚡ Сеть восстановлена" "Входное напряжение сети в норме (${INPUT_V:-220.0} В / ${INPUT_FREQ:-50.0} Гц), отключение длилось ${outage_sec} с, выход питается от сети."
 		if [ -x "$NOTIFY_SCRIPT" ]; then
@@ -343,19 +375,23 @@ EOF
 
 		TRIGGER_SHUTDOWN=0
 		TRIGGER_REASON=""
+		OB_ELAPSED=$((NOW - ON_BATTERY_START_TS))
 
-		if [ -n "$CHARGE" ] && [ "$CHARGE" -le "$BATTERY_THRESHOLD" ] 2>/dev/null; then
-			TRIGGER_SHUTDOWN=1
-			TRIGGER_REASON="Battery charge ($CHARGE%) fell below limit ($BATTERY_THRESHOLD%)"
-		elif [ -n "$RUNTIME" ] && [ "$RUNTIME" -le "$RUNTIME_THRESHOLD" ] 2>/dev/null; then
-			TRIGGER_SHUTDOWN=1
-			TRIGGER_REASON="Battery runtime ($RUNTIME s) fell below limit ($RUNTIME_THRESHOLD s)"
-		elif [ "$DELAY_THRESHOLD" -gt 0 ] && [ $ON_BATTERY_START_TS -gt 0 ]; then
-			ELAPSED=$((NOW - ON_BATTERY_START_TS))
-			if [ $ELAPSED -ge "$DELAY_THRESHOLD" ]; then
+		# Защита от морганий: заряд/рантайм применяются только после OB_GRACE секунд непрерывного OB
+		if [ $OB_ELAPSED -ge "$OB_GRACE" ] 2>/dev/null; then
+			if [ -n "$CHARGE" ] && [ "$CHARGE" -le "$BATTERY_THRESHOLD" ] 2>/dev/null; then
 				TRIGGER_SHUTDOWN=1
-				TRIGGER_REASON="On battery duration ($ELAPSED s) exceeded delay limit ($DELAY_THRESHOLD s)"
+				TRIGGER_REASON="Battery charge ($CHARGE%) fell below limit ($BATTERY_THRESHOLD%)"
+			elif [ -n "$RUNTIME" ] && [ "$RUNTIME" -le "$RUNTIME_THRESHOLD" ] 2>/dev/null; then
+				TRIGGER_SHUTDOWN=1
+				TRIGGER_REASON="Battery runtime ($RUNTIME s) fell below limit ($RUNTIME_THRESHOLD s)"
 			fi
+		fi
+
+		# Истечение таймера (аналог upssched): SHUTDOWN_ETS задан при OB, снят при OL
+		if [ $TRIGGER_SHUTDOWN -eq 0 ] && [ $SHUTDOWN_ETS -gt 0 ] && [ $NOW -ge "$SHUTDOWN_ETS" ]; then
+			TRIGGER_SHUTDOWN=1
+			TRIGGER_REASON="Shutdown timer expired ($OB_ELAPSED s on battery)"
 		fi
 
 		if [ $TRIGGER_SHUTDOWN -eq 1 ]; then
@@ -387,6 +423,14 @@ EOF
 	status_rule status_bypass_sev "$P_BYPASS" 'ИБП перешёл в режим байпаса' "$S_BYPASS"
 	status_rule status_replace_batt_sev "$P_RB" 'Требуется замена батареи' "$S_RB"
 	status_rule status_selftest_fail_sev "$P_FAIL" 'Ошибка самодиагностики ИБП' "$S_FAIL"
+	# Новые флаги: парные события ongoing/recovered через status_rule
+	status_rule status_trim_sev "$P_TRIM" 'ИБП корректирует напряжение (TRIM)' "$S_TRIM"
+	status_rule status_boost_sev "$P_BOOST" 'ИБП повышает напряжение (BOOST)' "$S_BOOST"
+	status_rule status_cal_sev "$P_CAL" 'Идёт калибровка ИБП' "$S_CAL"
+	status_rule status_test_sev "$P_TEST" 'Идёт самодиагностика ИБП' "$S_TEST"
+	status_rule status_alarm_sev "$P_ALARM" 'Авария ИБП (ALARM)' "$S_ALARM"
+	status_rule status_eco_sev "$P_ECO" 'ИБП в режиме ECO' "$S_ECO"
+	status_rule status_off_sev "$P_OFF" 'ИБП обесточен (OFF)' "$S_OFF"
 
 	HISTORY_CSV="${RUNTIME_DIR}/history.csv"
 	echo "$NOW,${INPUT_V:-0},${OUTPUT_V:-0},${CHARGE:-0},${LOAD_PCT:-0},${POWER:-0},$IS_OB,${INPUT_FREQ:-0},${OUTPUT_FREQ:-0},${TEMP:-0},${BATTERY_V:-0}" >> "$HISTORY_CSV"
@@ -449,5 +493,9 @@ EOF
 		fi
 	fi
 
-	sleep "$POLL_INTERVAL"
+	if [ "$FAST_POLL" = "1" ]; then
+		sleep 1
+	else
+		sleep "$POLL_INTERVAL"
+	fi
 done

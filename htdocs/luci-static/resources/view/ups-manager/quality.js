@@ -35,6 +35,13 @@ var DEFAULT_RULES = {
 	status_bypass_sev: 'warning',
 	status_replace_batt_sev: 'warning',
 	status_selftest_fail_sev: 'warning',
+	status_trim_sev: 'info',
+	status_boost_sev: 'info',
+	status_cal_sev: 'warning',
+	status_test_sev: 'info',
+	status_alarm_sev: 'critical',
+	status_eco_sev: 'info',
+	status_off_sev: 'critical',
 	in_volt_low_trig: '190',
 	in_volt_low_rec: '200',
 	in_volt_low_sev: 'warning',
@@ -135,12 +142,12 @@ return view.extend({
 			'.pq-rules-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }',
 			'@media (max-width: 1100px) { .pq-rules-grid { grid-template-columns: repeat(2, 1fr); } }',
 			'@media (max-width: 600px) { .pq-rules-grid { grid-template-columns: 1fr; } }',
-			'.pq-rule-card { background: var(--proton-card-solid, var(--background-color-low, #ffffff)); border: 1px solid var(--proton-border, var(--border-color-high, #e2e8f0)); border-radius: 10px; padding: 1rem 1.15rem; display: flex; flex-direction: column; justify-content: space-between; }',
+			'.pq-rule-card { background: var(--proton-card-solid, var(--background-color-low, #ffffff)); border: 1px solid var(--proton-border, var(--border-color-high, #e2e8f0)); border-radius: 10px; padding: 1rem 1.15rem; display: flex; flex-direction: column; }',
 			'.dark-mode .pq-rule-card { background: var(--proton-card-solid, #1e293b); border-color: var(--proton-border, var(--text-color-high, #334155)); }',
 			'.pq-rule-card.unsupported-hidden { display: none !important; }',
 			'.pq-rule-title { font-size: 0.92rem; font-weight: 700; color: var(--text-color-high, #1e293b); }',
 			'.dark-mode .pq-rule-title { color: var(--text-color-highest, #f8fafc); }',
-			'.pq-rule-fields { display: flex; flex-direction: column; gap: 0.6rem; }',
+			'.pq-rule-fields { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 12px; }',
 			'.pq-rule-inputs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }',
 			'.pq-input-group label { display: block; font-size: 0.72rem; color: var(--text-color-medium, #64748b); margin-bottom: 0.25rem; }',
 			'.dark-mode .pq-input-group label { color: var(--text-color-medium, #94a3b8); }',
@@ -472,7 +479,21 @@ return view.extend({
 				// Rule 3: 电池需要更换 (不支持)
 				this.renderStatusRuleCard('status_replace_batt_sev', _('Требуется замена батареи'), false, r.status_replace_batt_sev),
 				// Rule 4: UPS 自检失败 (不支持)
-				this.renderStatusRuleCard('status_selftest_fail_sev', _('Ошибка самодиагностики ИБП'), false, r.status_selftest_fail_sev)
+				this.renderStatusRuleCard('status_selftest_fail_sev', _('Ошибка самодиагностики ИБП'), false, r.status_selftest_fail_sev),
+				// Rule 5: TRIM — коррекция напряжения сетки
+				this.renderStatusRuleCard('status_trim_sev', _('ИБП корректирует напряжение (TRIM)'), true, r.status_trim_sev),
+				// Rule 6: BOOST — повышение напряжения сетки
+				this.renderStatusRuleCard('status_boost_sev', _('ИБП повышает напряжение (BOOST)'), true, r.status_boost_sev),
+				// Rule 7: CAL — калибровка
+				this.renderStatusRuleCard('status_cal_sev', _('Идёт калибровка ИБП'), true, r.status_cal_sev),
+				// Rule 8: TEST — самодиагностика
+				this.renderStatusRuleCard('status_test_sev', _('Идёт самодиагностика ИБП'), true, r.status_test_sev),
+				// Rule 9: ALARM — активная авария
+				this.renderStatusRuleCard('status_alarm_sev', _('Авария ИБП (ALARM)'), true, r.status_alarm_sev),
+				// Rule 10: ECO — экономичный режим
+				this.renderStatusRuleCard('status_eco_sev', _('ИБП в режиме ECO'), true, r.status_eco_sev),
+				// Rule 11: OFF — выходы обесточены
+				this.renderStatusRuleCard('status_off_sev', _('ИБП обесточен (OFF)'), true, r.status_off_sev)
 			]),
 
 			// Subsection 2: Numeric Rules
@@ -505,16 +526,18 @@ return view.extend({
 		var cardClass = 'pq-rule-card' + (!supported ? ' is-unsupported' : '') + (isHidden ? ' unsupported-hidden' : '');
 
 		var badge = supported ?
-			E('span', { 'class': 'badge-pill badge-pill-green' }, _('Поддерживается')) :
-			E('span', { 'class': 'text-unsupported' }, _('Не поддерживается'));
+			E('span', { 'class': 'badge-pill badge-pill-green', 'style': 'display:block;width:fit-content;margin-top:6px;' }, _('Поддерживается')) :
+			E('span', { 'class': 'text-unsupported', 'style': 'display:block;width:fit-content;margin-top:6px;' }, _('Не поддерживается'));
 
 		var sevSelect = E('select', {
 			'id': 'rule-input-' + key,
 			'class': 'cbi-input-select'
 		}, [
-			E('option', { 'value': 'warning', 'selected': curSev === 'warning' }, _('Предупреждение')),
-			E('option', { 'value': 'critical', 'selected': curSev === 'critical' }, _('Критично'))
+			E('option', { 'value': 'info' }, _('Информация')),
+			E('option', { 'value': 'warning' }, _('Предупреждение')),
+			E('option', { 'value': 'critical' }, _('Критично'))
 		]);
+		sevSelect.value = curSev;
 
 		var noteNode = !supported ?
 			E('div', { 'class': 'pq-rule-unsupported-note' }, [
@@ -542,8 +565,8 @@ return view.extend({
 		var cardClass = 'pq-rule-card' + (!supported ? ' is-unsupported' : '') + (isHidden ? ' unsupported-hidden' : '');
 
 		var badge = supported ?
-			E('span', { 'class': 'badge-pill badge-pill-green' }, _('Поддерживается')) :
-			E('span', { 'class': 'text-unsupported' }, _('Не поддерживается'));
+			E('span', { 'class': 'badge-pill badge-pill-green', 'style': 'display:block;width:fit-content;margin-top:6px;' }, _('Поддерживается')) :
+			E('span', { 'class': 'text-unsupported', 'style': 'display:block;width:fit-content;margin-top:6px;' }, _('Не поддерживается'));
 
 		var trigInput = E('input', {
 			'type': 'number',
@@ -561,9 +584,11 @@ return view.extend({
 			'id': 'rule-input-' + prefix + '_sev',
 			'class': 'cbi-input-select'
 		}, [
-			E('option', { 'value': 'warning', 'selected': sevVal === 'warning' }, _('Предупреждение')),
-			E('option', { 'value': 'critical', 'selected': sevVal === 'critical' }, _('Критично'))
+			E('option', { 'value': 'info' }, _('Информация')),
+			E('option', { 'value': 'warning' }, _('Предупреждение')),
+			E('option', { 'value': 'critical' }, _('Критично'))
 		]);
+		sevSelect.value = sevVal;
 
 		var noteNode = !supported ?
 			E('div', { 'class': 'pq-rule-unsupported-note' }, [

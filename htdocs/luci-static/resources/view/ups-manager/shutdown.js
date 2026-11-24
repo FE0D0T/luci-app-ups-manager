@@ -31,6 +31,12 @@ return view.extend({
 		o.datatype = 'uinteger';
 		o.default = '600';
 
+		o = s.option(form.Value, 'ob_grace', _('Защита от кратковременных скачков (сек)'),
+			_('Минимальное время работы от батареи перед проверкой порогов заряда и времени. Защищает от ложного выключения при моргании света на 1–2 секунды (0 — отключить).'));
+		o.datatype = 'uinteger';
+		o.default = '10';
+		o.placeholder = '10';
+
 		s = m.section(form.NamedSection, 'shutdown', 'shutdown_policy', _('Приоритет и порядок отключения устройств'));
 		s.anonymous = true;
 
